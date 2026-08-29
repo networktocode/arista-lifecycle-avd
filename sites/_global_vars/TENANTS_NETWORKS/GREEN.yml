@@ -1,0 +1,15 @@
+---
+GREEN:
+  - name: GREEN
+    mac_vrf_vni_base: 10000
+    vrfs:
+      - name: GREEN
+        vrf_vni: 502
+        validate_bgp_peers: true
+        svis:
+          - id: 200
+            name: GREEN_VLAN_200
+            tags:
+              - DC1
+            enabled: true
+            ip_address_virtual: 10.10.200.1/24

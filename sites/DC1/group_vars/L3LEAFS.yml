@@ -1,0 +1,61 @@
+---
+type: l3leaf
+pod_name: DC1_POD
+l3leaf:
+  defaults:
+    platform: 7050X3
+    bgp_as: 65100
+    loopback_ipv4_pool: 10.99.1.0/25
+    vtep_loopback_ipv4_pool: 10.101.1.0/24
+    mlag_peer_ipv4_pool: 10.101.255.0/31
+    mlag_peer_l3_ipv4_pool: 10.101.254.0/31
+    uplink_ipv4_pool: 10.101.0.0/24
+    uplink_switches:
+      - dc1-spine1
+      - dc1-spine2
+    uplink_bfd: true
+    spanning_tree_mode: mstp
+    spanning_tree_priority: 4096
+    virtual_router_mac_address: 00:1c:73:00:00:99
+    mlag_dual_primary_detection: true
+  node_groups:
+    - group: DC1_LEAF1
+      bgp_as: 65101
+      filter:
+        tenants: &id001
+          - BLUE
+          - GREEN
+        tags:
+          - DC1
+      nodes:
+        - name: dc1-leaf1
+          id: 1
+          mgmt_ip: 192.168.0.12/24
+          uplink_switch_interfaces:
+            - Ethernet1/1
+            - Ethernet1/1
+        - name: dc1-leaf2
+          id: 2
+          mgmt_ip: 192.168.0.13/24
+          uplink_switch_interfaces:
+            - Ethernet1/2
+            - Ethernet1/2
+    - group: DC1_LEAF2
+      bgp_as: 65102
+      filter:
+        tenants: *id001
+        tags:
+          - DC1
+      nodes:
+        - name: dc1-leaf3
+          id: 3
+          mgmt_ip: 192.168.0.14/24
+          uplink_switch_interfaces:
+            - Ethernet1/3
+            - Ethernet1/3
+        - name: dc1-leaf4
+          id: 4
+          mgmt_ip: 192.168.0.15/24
+          uplink_switch_interfaces:
+            - Ethernet1/4
+            - Ethernet1/4
