@@ -1,0 +1,19 @@
+---
+# Overrides applied only when building for the containerlab digital twin.
+# cEOS does not support MTU 9000 on p2p links.
+p2p_uplinks_mtu: 1500
+# Relaxed BFD timers keep cEOS CPU down.
+bfd_multihop:
+  interval: 1200
+  min_rx: 1200
+  multiplier: 3
+# Streaming to CVaaS from the twin.
+cv_settings:
+  cvaas:
+    enabled: true
+    clusters:
+      - name: cvaas
+        region: "us-central1-c"
+  terminattr:
+    disable_aaa: true
+mgmt_gateway: "192.168.0.1"

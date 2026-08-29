@@ -1,0 +1,60 @@
+---
+- name: Read global_vars path from ansible.cfg
+  ansible.builtin.set_fact:
+    _global_vars_path: "{{ lookup('ini', 'paths section=vars_global_vars file=' ~ playbook_dir ~ '/../ansible.cfg') }}"
+  run_once: true
+
+- name: Count input lines (data model)
+  ansible.builtin.shell: >-
+    for f in {{ inventory_dir }}/group_vars/*.yml {{ inventory_dir }}/{{ _global_vars_path }}*.yml; do
+      [ -f "$f" ] && echo "$f:$(grep -c '' "$f")";
+    done
+  register: _input_raw
+  run_once: true
+  delegate_to: localhost
+  changed_when: false
+
+- name: Count output lines (generated configs)
+  ansible.builtin.shell: >-
+    for f in {{ inventory_dir }}/intended/configs/*.cfg; do
+      [ -f "$f" ] && echo "$f:$(grep -c '' "$f")";
+    done
+  register: _output_raw
+  run_once: true
+  delegate_to: localhost
+  changed_when: false
+
+- name: Set report facts
+  ansible.builtin.set_fact:
+    avd_input_files: "{{ _input_raw.stdout_lines | default([]) }}"
+    avd_output_files: "{{ _output_raw.stdout_lines | default([]) }}"
+    avd_total_input: "{{ _input_raw.stdout_lines | default([]) | map('split', ':') | map('last') | map('int') | sum }}"
+    avd_total_output: "{{ _output_raw.stdout_lines | default([]) | map('split', ':') | map('last') | map('int') | sum }}"
+  run_once: true
+
+- name: Set amplification factor
+  ansible.builtin.set_fact:
+    avd_amplification: "{{ (avd_total_output | int / avd_total_input | int) | round(0) | int }}"
+  run_once: true
+  when: avd_total_input | int > 0
+
+- name: AVD Amplification Factor
+  ansible.builtin.debug:
+    msg: "{{ avd_total_input }} lines of input -> {{ avd_total_output }} lines of config = {{ avd_amplification }}x amplification"
+  run_once: true
+
+- name: Create AVD amplification report directory
+  ansible.builtin.file:
+    path: "{{ inventory_dir }}/avd_amplification"
+    state: directory
+    mode: "0755"
+  run_once: true
+  delegate_to: localhost
+
+- name: Generate amplification report
+  ansible.builtin.template:
+    src: report.md.j2
+    dest: "{{ inventory_dir }}/avd_amplification/avd_intent_report.md"
+    mode: "0644"
+  run_once: true
+  delegate_to: localhost
