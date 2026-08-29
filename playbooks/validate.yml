@@ -1,0 +1,14 @@
+---
+- name: Validate DC1 production with ANTA
+  hosts: "{{ target }}"
+  connection: local
+  gather_facts: false
+  vars:
+    anta_user: "{{ lookup('env', 'ANTA_USERNAME') | default('cvpadmin', true) }}"
+    anta_password: "{{ lookup('env', 'ANTA_PASSWORD') }}"
+    avd_catalogs_filters:
+      - skip_tests: [VerifyLoggingErrors]
+  tasks:
+    - name: Validate states on EOS devices
+      ansible.builtin.import_role:
+        name: arista.avd.anta_runner

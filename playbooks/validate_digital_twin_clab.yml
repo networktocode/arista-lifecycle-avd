@@ -1,0 +1,17 @@
+---
+- name: Validate the DC1 clab digital twin with ANTA
+  hosts: "{{ target }}"
+  connection: local
+  gather_facts: false
+  vars:
+    anta_user: "{{ lookup('env', 'ANTA_USERNAME') | default('cvpadmin', true) }}"
+    anta_password: "{{ lookup('env', 'ANTA_PASSWORD') }}"
+    avd_catalogs_filters:
+      - skip_tests: [VerifyLoggingErrors, VerifyNTP, VerifyInterfaceDiscards]
+    avd_catalogs_extra_fabric_validation: true
+    output_dir_name: "digital_twins/clab/intended"
+    anta_dir_name: "anta_digital_twin/clab"
+  tasks:
+    - name: Validate states on EOS devices
+      ansible.builtin.import_role:
+        name: arista.avd.anta_runner

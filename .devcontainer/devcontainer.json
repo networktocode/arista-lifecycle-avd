@@ -1,0 +1,13 @@
+{
+    "name": "AVD (arista-lifecycle-avd)",
+    "image": "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0",
+    // user to use in the container
+    "remoteUser": "avd",
+    "customizations":{
+        "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python"
+            }
+        }
+    }
+}

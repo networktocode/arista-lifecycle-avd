@@ -1,0 +1,63 @@
+---
+_metadata:
+  name: "AVD Management Settings"
+  description: "Management-plane AVD settings; Nautobot renders this file to sites/_global_vars/management.yml"
+  weight: 500
+  is_active: true
+  platforms:
+    - name: "Arista EOS"
+# Local users (lab hash, public in Arista's 0-to-hero repo)
+aaa_settings:
+  local_users:
+    - name: cvpadmin
+      privilege: 15
+      role: network-admin
+      sha512_password: "$6$vQGQxmJp16IINuqk$makfRsxIS8Das8bugela5cdUd0iSUzA0/nPRXWXmonGeQ/vuqWi.vrr1OINH4MZLCOux0tniArjvyJNJHe9Zt."
+  authorization:
+    exec:
+      default: local
+management_eapi:
+  enabled: true
+  enable_https: true
+custom_structured_configuration_clock:
+  timezone: EST
+cv_settings:
+  cvaas:
+    enabled: true
+    clusters:
+      - name: cvaas
+        region: "us-central1-c"
+  terminattr:
+    disable_aaa: true
+dns_settings:
+  domain: demo.lab
+  servers:
+    - ip_address: 8.8.8.8
+      vrf: use_default_mgmt_method_vrf
+    - ip_address: 8.8.4.4
+      vrf: use_default_mgmt_method_vrf
+  set_source_interfaces: false
+ntp_settings:
+  server_vrf: use_default_mgmt_method_vrf
+  servers:
+    - name: 0.north-america.pool.ntp.org
+    - name: 1.north-america.pool.ntp.org
+fabric_sflow:
+  uplinks: true
+  downlinks: true
+  endpoints: true
+  mlag_interfaces: true
+sflow_settings:
+  polling_interval: 50
+  sample:
+    rate: 10
+  export_to_cloudvision:
+    enabled: true
+    vrf: default
+  vrfs:
+    - name: default
+      source_interface: Loopback0
+custom_structured_configuration_banners:
+  motd: |
+    NTC + Arista lifecycle demo. Intent lives in Nautobot; this config was rendered by AVD.
+    EOF

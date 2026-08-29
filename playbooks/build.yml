@@ -1,0 +1,33 @@
+---
+- name: Build DC1 configuration and documentation (production)
+  hosts: "{{ target }}"
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Generate AVD structured configurations and fabric documentation
+      ansible.builtin.import_role:
+        name: arista.avd.eos_designs
+    - name: Generate device configurations and documentation
+      ansible.builtin.import_role:
+        name: arista.avd.eos_cli_config_gen
+    - name: Generate the AVD amplification report
+      ansible.builtin.import_role:
+        name: avd_intent_report
+
+- name: Build DC1 configuration and documentation (clab digital twin)
+  hosts: "{{ target }}"
+  connection: local
+  gather_facts: false
+  vars_files:
+    - "../digital_twin/clab/VARS_OVERRIDE.yml"
+  vars:
+    output_dir_name: "digital_twins/clab/intended"
+    documentation_dir_name: "digital_twins/clab/documentation"
+    avd_digital_twin_mode: true
+  tasks:
+    - name: Generate AVD structured configurations and fabric documentation
+      ansible.builtin.import_role:
+        name: arista.avd.eos_designs
+    - name: Generate device configurations and documentation
+      ansible.builtin.import_role:
+        name: arista.avd.eos_cli_config_gen

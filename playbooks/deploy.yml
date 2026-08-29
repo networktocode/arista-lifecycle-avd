@@ -1,0 +1,13 @@
+---
+- name: Deploy DC1 to production through CloudVision
+  hosts: "{{ target }}"
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Deploy configurations and tags to CloudVision
+      ansible.builtin.import_role:
+        name: arista.avd.cv_deploy
+      vars:
+        cv_server: "{{ lookup('env', 'CVAAS_SERVER') }}"
+        cv_token: "{{ lookup('env', 'CVAAS_TOKEN') }}"
+        cv_configlet_name_template: "AVD-${hostname}"
