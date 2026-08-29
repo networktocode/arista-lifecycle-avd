@@ -1,0 +1,37 @@
+---
+bgp_distance:
+  local_routes: 200
+  external_routes: 20
+  internal_routes: 200
+bgp_peer_groups:
+  ipv4_underlay_peers:
+    name: IPv4-UNDERLAY-PEERS
+    password: AQQvKeimxJu+uGQ/yYvv9w==
+generate_cv_tags:
+  topology_hints: true
+default_interfaces:
+  - types:
+      - spine
+    platforms:
+      - 7500R3
+    downlink_interfaces:
+      - Ethernet1/1-48
+  - types:
+      - l3leaf
+    platforms:
+      - 7050X3
+    mlag_interfaces:
+      - Ethernet51/1
+      - Ethernet52/1
+    uplink_interfaces:
+      - Ethernet49/1
+      - Ethernet50/1
+    downlink_interfaces:
+      - Ethernet53/1
+      - Ethernet54/1
+bgp_graceful_restart:
+  enabled: true
+  restart_time: 300
+fabric_ip_addressing:
+  mlag:
+    algorithm: same_subnet

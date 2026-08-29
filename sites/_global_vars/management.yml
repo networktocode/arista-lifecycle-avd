@@ -1,0 +1,58 @@
+---
+cv_settings:
+  cvaas:
+    enabled: true
+    clusters:
+      - name: cvaas
+        region: us-central1-c
+  terminattr:
+    disable_aaa: true
+aaa_settings:
+  local_users:
+    - name: cvpadmin
+      role: network-admin
+      privilege: 15
+      sha512_password: $6$vQGQxmJp16IINuqk$makfRsxIS8Das8bugela5cdUd0iSUzA0/nPRXWXmonGeQ/vuqWi.vrr1OINH4MZLCOux0tniArjvyJNJHe9Zt.
+  authorization:
+    exec:
+      default: local
+dns_settings:
+  domain: demo.lab
+  servers:
+    - vrf: use_default_mgmt_method_vrf
+      ip_address: 8.8.8.8
+    - vrf: use_default_mgmt_method_vrf
+      ip_address: 8.8.4.4
+  set_source_interfaces: false
+fabric_sflow:
+  uplinks: true
+  downlinks: true
+  endpoints: true
+  mlag_interfaces: true
+ntp_settings:
+  servers:
+    - name: 0.north-america.pool.ntp.org
+    - name: 1.north-america.pool.ntp.org
+  server_vrf: use_default_mgmt_method_vrf
+sflow_settings:
+  vrfs:
+    - name: default
+      source_interface: Loopback0
+  sample:
+    rate: 10
+  polling_interval: 50
+  export_to_cloudvision:
+    vrf: default
+    enabled: true
+management_eapi:
+  enabled: true
+  enable_https: true
+custom_structured_configuration_clock:
+  timezone: EST
+custom_structured_configuration_banners:
+  motd: 'NTC + Arista lifecycle demo. Intent lives in Nautobot; this config was rendered
+    by AVD.
+
+    EOF
+
+    '
