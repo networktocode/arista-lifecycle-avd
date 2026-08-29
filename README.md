@@ -9,7 +9,9 @@ Arista's AVD 0-to-hero reference repo with one site, DC1, and one difference tha
 - `config_contexts/` is **hand-edited**. Nautobot syncs these two files as config contexts
   (`AVD Fabric Settings`, `AVD Management Settings`) and the design writes them back out as
   `sites/_global_vars/fabric_settings.yml` and `management.yml`. Edit here, run
-  `invoke sync-avd-repo` in the workshop repo, rerun the design, review the PR.
+  `invoke sync-avd-repo` in the workshop repo, rerun the design, review the PR. Nautobot stores
+  the context as JSON, so the rendered `sites/_global_vars/*.yml` files come back with keys in
+  Nautobot's order, not the order in these files; the content is identical.
 
 ## Build
 
@@ -19,9 +21,12 @@ Open the repo in the devcontainer (AVD universal image) or run:
       ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0 make dc1-build
 
 `make help` lists the targets. `deploy` and `validate` targets read `CVAAS_SERVER`, `CVAAS_TOKEN`,
-`ANTA_USERNAME`, and `ANTA_PASSWORD` from the environment; nothing secret is committed. The
-`cvpadmin` hash and the BGP password in `config_contexts/` are lab values copied from Arista's
-public reference repo.
+`ANTA_USERNAME`, and `ANTA_PASSWORD` from the environment; none of those are committed. The
+`cvpadmin` sha512 hash and the BGP peer password are lab values copied from Arista's public
+reference repo, and they are committed here in the clear: the hash appears in
+`config_contexts/dc1_management.yml` and in `digital_twin/clab/init-configs/basic.cfg`, and the
+BGP peer password in `config_contexts/dc1_fabric_settings.yml`. Both are also carried into the
+generated files under `sites/`. Replace them before pointing this repo at anything real.
 
 ## Reset
 
