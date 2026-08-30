@@ -13,9 +13,3 @@ BLUE:
               - DC1
             enabled: true
             ip_address_virtual: 10.10.100.1/24
-          - id: 101
-            name: BLUE_VLAN_101
-            tags:
-              - DC1
-            enabled: true
-            ip_address_virtual: 10.10.101.1/24
