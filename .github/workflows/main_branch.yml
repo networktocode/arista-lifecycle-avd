@@ -68,6 +68,14 @@ jobs:
       - name: add the repo to git safe directory
         run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
 
+      - name: Pin ANTA 1.9.0
+        # The image ships anta 1.8.0 under /home/avd/.local, which the job's PYTHONPATH
+        # puts ahead of system site-packages; the upgrade must land in that directory
+        # or the old version silently wins. The assert makes shadowing a loud failure.
+        run: |
+          python3 -m pip install --quiet --upgrade --target /home/avd/.local/lib/python3.13/site-packages "anta==1.9.0"
+          python3 -c 'import anta; assert anta.__version__ == "1.9.0", anta.__version__; print("anta", anta.__version__)'
+
       - name: run DC1 validation
         run: ansible-playbook playbooks/validate.yml -i sites/DC1/inventory.yml -e 'target=DC1'
         id: dc1-validation

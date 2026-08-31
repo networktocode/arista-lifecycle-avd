@@ -10,7 +10,7 @@ PyYAML>=5.4.1
 md-toc>=8.1.0
 deepmerge>=1.1.0
 cryptography>=38.0.4
-anta==1.8.0
+anta==1.9.0
 aristaproto>=0.1.1
 pyavd==6.3.0
 referencing==0.35.1
