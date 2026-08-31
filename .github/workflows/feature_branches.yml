@@ -1,0 +1,64 @@
+---
+# Build the AVD artifacts for every push to a branch other than main and commit
+# them back, so the intended configs, documentation, and twin configs in the
+# branch always match the group_vars that produced them.
+name: Build feature branch
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  Build:
+    env:
+      ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
+    timeout-minutes: 4
+    runs-on: [self-hosted, clab]
+    permissions:
+      contents: write
+    container:
+      image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
+      # root is the only user GitHub Actions allows in a job container; host
+      # networking lets the job reach the containerlab API server and the lab
+      # bridges on the runner's droplet.
+      options: '--user=root --network host'
+      env:
+        PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: add the repo to git safe directory
+        run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
+
+      - name: Check DC1 paths for AVD variable changes
+        uses: dorny/paths-filter@v4
+        id: filter-dc1
+        with:
+          filters: |
+            workflows:
+              - 'sites/DC1/group_vars/**'
+              - 'sites/_global_vars/**'
+
+      - name: Build configuration for the DC1 fabric
+        run: make dc1-build
+        id: build-dc1
+        if: steps.filter-dc1.outputs.workflows == 'true'
+
+      - name: commit the changes if the build changed files
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add --all
+            git commit -m "Build update from pipeline execution [skip ci]"
+            git pull --rebase origin "$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          else
+            echo "WARNING: No changes were detected. git commit push action aborted."
+          fi
+        shell: bash
+        env:
+          BRANCH: ${{ github.ref_name }}
+        if: steps.filter-dc1.outputs.workflows == 'true'
