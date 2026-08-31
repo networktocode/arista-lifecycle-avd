@@ -59,6 +59,8 @@ GROUP_VARS = (
     ("ansible_user", '"admin"'),
     ("ansible_password", '"admin"'),
     ("ansible_network_os", '"arista.eos.eos"'),
+    ("ansible_become", "true"),
+    ("ansible_become_method", '"enable"'),
     ("ansible_connection", '"ansible.netcommon.httpapi"'),
     ("ansible_httpapi_use_ssl", "true"),
     ("ansible_httpapi_validate_certs", "false"),

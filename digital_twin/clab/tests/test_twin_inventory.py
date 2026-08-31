@@ -197,6 +197,8 @@ class TwinInventoryTest(unittest.TestCase):
         self.assertIn('        ansible_user: "admin"', text)
         self.assertIn('        ansible_password: "admin"', text)
         self.assertIn('        ansible_network_os: "arista.eos.eos"', text)
+        self.assertIn("        ansible_become: true", text)
+        self.assertIn('        ansible_become_method: "enable"', text)
         self.assertIn('        ansible_connection: "ansible.netcommon.httpapi"', text)
         self.assertIn("        ansible_httpapi_use_ssl: true", text)
         self.assertIn("        ansible_httpapi_validate_certs: false", text)
