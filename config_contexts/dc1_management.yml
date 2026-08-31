@@ -6,13 +6,19 @@ _metadata:
   is_active: true
   platforms:
     - name: "Arista EOS"
-# Local users (lab hash, public in Arista's 0-to-hero repo)
+# Local users. cvpadmin carries the lab hash that is public in Arista's 0-to-hero repo.
+# anta is the login the pipeline's production ANTA runs use; its password lives only in the
+# ANTA_PASSWORD repository Actions secret, set by the workshop repo's `invoke avd-secrets`.
 aaa_settings:
   local_users:
     - name: cvpadmin
       privilege: 15
       role: network-admin
       sha512_password: "$6$vQGQxmJp16IINuqk$makfRsxIS8Das8bugela5cdUd0iSUzA0/nPRXWXmonGeQ/vuqWi.vrr1OINH4MZLCOux0tniArjvyJNJHe9Zt."
+    - name: anta
+      privilege: 15
+      role: network-admin
+      sha512_password: "$6$Z0XaFLSxWMm4tzgB$8AVlUHDNhTGoFsJcqKNIVAaBKCwnIESVU0bwi0ONYwf8PWm5OUsXy3RqGGMwWvsedzcGqEZ590.2g7wRfe.4z."
   authorization:
     exec:
       default: local
