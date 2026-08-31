@@ -12,10 +12,10 @@ jobs:
   deploy-prod:
     env:
       ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
-      CVAAS_SERVER: ${{ secrets.CVAAS_SERVER }}
-      CVAAS_TOKEN: ${{ secrets.CVAAS_TOKEN }}
     timeout-minutes: 15
     runs-on: [self-hosted, clab]
+    permissions:
+      contents: read
     outputs:
       output_dc1: ${{ steps.dc1-deploy.outcome }}
     container:
@@ -43,14 +43,15 @@ jobs:
         id: dc1-deploy
         run: ansible-playbook playbooks/deploy.yml -i sites/DC1/inventory.yml -e 'target=DC1 cv_submit_workspace=true cv_run_change_control=true'
         if: steps.filter-dc1.outputs.workflows == 'true'
+        env:
+          CVAAS_SERVER: ${{ secrets.CVAAS_SERVER }}
+          CVAAS_TOKEN: ${{ secrets.CVAAS_TOKEN }}
 
   Network-validation:
     if: ${{ needs.deploy-prod.outputs.output_dc1 == 'success' }}
     needs: deploy-prod
     env:
       ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
-      ANTA_USERNAME: ${{ secrets.ANTA_USERNAME }}
-      ANTA_PASSWORD: ${{ secrets.ANTA_PASSWORD }}
     timeout-minutes: 15
     runs-on: [self-hosted, clab]
     permissions:
@@ -71,6 +72,9 @@ jobs:
         run: ansible-playbook playbooks/validate.yml -i sites/DC1/inventory.yml -e 'target=DC1'
         id: dc1-validation
         continue-on-error: true
+        env:
+          ANTA_USERNAME: ${{ secrets.ANTA_USERNAME }}
+          ANTA_PASSWORD: ${{ secrets.ANTA_PASSWORD }}
 
       - name: commit the test catalogs and report to the repository
         run: |
