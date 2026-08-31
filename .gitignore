@@ -1,6 +1,7 @@
 *.retry
 .anta/
 __pycache__/
+twin_inventory.yml
 digital_twin/clab/clab-dc1/
 sites/DC1/config_backup/
 .vscode/

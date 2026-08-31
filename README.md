@@ -28,6 +28,12 @@ reference repo, and they are committed here in the clear: the hash appears in
 BGP peer password in `config_contexts/dc1_fabric_settings.yml`. Both are also carried into the
 generated files under `sites/`. Replace them before pointing this repo at anything real.
 
+## Pipeline
+
+Pull requests are validated against a throwaway containerlab digital twin: `digital_twin/clab/twin_inventory.py`
+finds the twin through the containerlab API server and writes `twin_inventory.yml`, then `make dc1-deploy-twin`
+and `make dc1-validate-twin` push the twin configs over eAPI and run ANTA against them.
+
 ## Reset
 
 `main` is the demo's starting point and is tagged `baseline`. `invoke reset-demo` in the workshop

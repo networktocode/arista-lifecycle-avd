@@ -1,6 +1,7 @@
-.PHONY: help dc1-build dc1-deploy dc1-deploy_digital_twin_clab dc1-validate dc1-validate_digital_twin_clab deploy_clab_topology
+.PHONY: help dc1-build dc1-deploy dc1-deploy_digital_twin_clab dc1-validate dc1-validate_digital_twin_clab dc1-deploy-twin dc1-validate-twin deploy_clab_topology
 
 INVENTORY := sites/DC1/inventory.yml
+TWIN_INVENTORY := twin_inventory.yml
 TARGET := -e 'target=DC1'
 
 help: ## Show the targets
@@ -20,6 +21,12 @@ dc1-validate: ## Run ANTA against production DC1 (ANTA_USERNAME, ANTA_PASSWORD)
 
 dc1-validate_digital_twin_clab: ## Run ANTA against the clab digital twin
 	ansible-playbook playbooks/validate_digital_twin_clab.yml -i $(INVENTORY) --diff $(TARGET)
+
+dc1-deploy-twin: ## Replace the digital twin configs over eAPI (needs $(TWIN_INVENTORY) from twin_inventory.py)
+	ansible-playbook playbooks/deploy_twin_eapi.yml -i $(TWIN_INVENTORY)
+
+dc1-validate-twin: ## Run ANTA against the digital twin over eAPI (needs $(TWIN_INVENTORY) from twin_inventory.py)
+	ansible-playbook playbooks/validate_twin_eapi.yml -i $(TWIN_INVENTORY) --diff
 
 deploy_clab_topology: ## Start the twin topology with containerlab (on the clab host)
 	clab deploy -t digital_twin/clab/topology.clab.yml
