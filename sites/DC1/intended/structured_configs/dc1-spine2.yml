@@ -88,6 +88,10 @@ ip_name_server:
     - ip_address: 8.8.4.4
 ip_routing: true
 local_users:
+- name: anta
+  privilege: 15
+  role: network-admin
+  sha512_password: $6$Z0XaFLSxWMm4tzgB$8AVlUHDNhTGoFsJcqKNIVAaBKCwnIESVU0bwi0ONYwf8PWm5OUsXy3RqGGMwWvsedzcGqEZ590.2g7wRfe.4z.
 - name: cvpadmin
   privilege: 15
   role: network-admin
