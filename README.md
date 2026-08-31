@@ -48,16 +48,53 @@ has no such filter: a change control dispatch is an explicit request to validate
 Workflow-generated commits are authored as `github-actions[bot]` and carry `[skip ci]`, so a commit
 back never retriggers the pipeline.
 
-### Secrets
+### Secrets and variables
+
+Four Actions secrets and one Actions variable:
 
 | Secret | Used by |
 | --- | --- |
 | `CLAB_JWT_SECRET` | `PR_test_digital_twin.yml`, to mint a token for the containerlab API server |
 | `CVAAS_SERVER`, `CVAAS_TOKEN` | `main_branch.yml`, read by `playbooks/deploy.yml` |
-| `ANTA_USERNAME`, `ANTA_PASSWORD` | `main_branch.yml` and `cvp_post_CC_validation.yml`, read by `playbooks/validate.yml` |
+| `ANTA_PASSWORD` | `main_branch.yml` and `cvp_post_CC_validation.yml`, read by `playbooks/validate.yml` |
+
+| Variable | Used by |
+| --- | --- |
+| `ANTA_USERNAME` | the same two workflows, as `${{ vars.ANTA_USERNAME || 'anta' }}` |
+
+`ANTA_USERNAME` is a variable and not a secret on purpose. It is a username, and its value is the
+four-letter string `anta`, which as a secret GitHub would mask everywhere it appears in any log in
+this repository. The workflows fall back to `anta` when the variable is unset, so the pipeline runs
+with the variable missing.
 
 The digital twin needs no credentials of its own: containerlab boots cEOS with `admin`/`admin` and
 `twin_inventory.py` writes those into the generated inventory.
+
+### Deploying to the twin
+
+`playbooks/deploy_twin_eapi.yml` does not push the twin intended configs as rendered. `replace:
+config` opens a configuration session, runs `rollback clean-config`, loads the file, and commits, so
+the file's management plane becomes the device's. The intended configs describe production's:
+`interface Management1` renumbered to a static 192.168.0.x in VRF MGMT, eAPI listening in VRF MGMT
+only, a default route via 192.168.0.1, and no `admin` account. Committing that onto the twin would
+cut the eAPI session doing the committing and delete the credentials it authenticated with, in the
+same commit.
+
+So the playbook renders each host's configuration through
+`digital_twin/clab/twin_config_filter.py` first, into a directory under `/tmp`. The filter drops
+the management-plane stanzas and appends a tail that restores `admin`/`admin`, `interface
+Management1` with the node's own twin address in the default VRF, and eAPI in the default VRF.
+`vrf instance MGMT` is deliberately kept: `mlag configuration`'s heartbeat peer address, the name
+servers, and the NTP servers all reference it, and an MGMT VRF with no interface in it cannot carry
+a session. Everything the pull request is validating - BGP, VLANs, VRFs, Ethernet interfaces, MLAG,
+route maps - passes through byte for byte, which the tests in
+`digital_twin/clab/tests/test_twin_config_filter.py` assert. Filtering is idempotent: every stanza
+the tail adds is a stanza the filter removes.
+
+One consequence for reading twin ANTA results: the catalogs are generated from the production
+intended configs, so any check that asserts production's management addressing (Management1's
+address, the MGMT VRF default route) is an expected delta on the twin, not a regression. Read those
+rows against production, not against the twin.
 
 ### The digital twin prerequisite
 

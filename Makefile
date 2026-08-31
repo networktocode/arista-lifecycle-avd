@@ -22,7 +22,7 @@ dc1-validate: ## Run ANTA against production DC1 (ANTA_USERNAME, ANTA_PASSWORD)
 dc1-validate_digital_twin_clab: ## Run ANTA against the clab digital twin
 	ansible-playbook playbooks/validate_digital_twin_clab.yml -i $(INVENTORY) --diff $(TARGET)
 
-dc1-deploy-twin: ## Replace the digital twin configs over eAPI (needs $(TWIN_INVENTORY) from twin_inventory.py)
+dc1-deploy-twin: ## Replace the digital twin configs over eAPI, filtered for twin reachability (needs $(TWIN_INVENTORY) from twin_inventory.py)
 	ansible-playbook playbooks/deploy_twin_eapi.yml -i $(TWIN_INVENTORY)
 
 dc1-validate-twin: ## Run ANTA against the digital twin over eAPI (needs $(TWIN_INVENTORY) from twin_inventory.py)

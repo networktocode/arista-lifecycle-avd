@@ -3,12 +3,59 @@
 # over eAPI. The twin has no CloudVision onboarding, so this is the counterpart
 # of deploy_digital_twin_clab.yml for a pipeline run: the inventory comes from
 # digital_twin/clab/twin_inventory.py and is passed with -i on the command line.
+#
+# The configs are filtered before they are pushed. `replace: config` opens a
+# configuration session, runs `rollback clean-config`, loads the file, and
+# commits, so the file's management plane becomes the device's management plane.
+# The intended configs carry production's: Management1 renumbered into VRF MGMT,
+# eAPI listening in VRF MGMT only, and no `admin` account. Committing that onto
+# the twin would cut this very session and delete the credentials it is using.
+# digital_twin/clab/twin_config_filter.py drops those stanzas and appends a tail
+# that keeps the twin's own addressing, its eAPI listener in the default VRF,
+# and containerlab's admin/admin login. Everything the pull request is actually
+# validating passes through untouched.
 - name: Deploy the DC1 digital twin configuration over eAPI
   hosts: DC1_TWIN
   gather_facts: false
+  vars:
+    # The twin runs on containerlab's management bridge, which assigns
+    # addresses dynamically, so the inventory reports each node's address but
+    # not the prefix length. This is containerlab's default; override with
+    # `-e twin_mgmt_prefix_length=...` if the twin's bridge is not a /24.
+    twin_mgmt_prefix_length: 24
+    twin_intended_dir: "{{ playbook_dir }}/../sites/DC1/digital_twins/clab/intended/configs"
+    # Outside the repository on purpose: the pipeline commits everything the
+    # workspace changed, and these are per-twin renderings, not AVD artifacts.
+    twin_filtered_dir: /tmp/dc1-twin-filtered-configs
+  pre_tasks:
+    - name: Create the directory for the filtered twin configurations
+      ansible.builtin.file:
+        path: "{{ twin_filtered_dir }}"
+        state: directory
+        mode: "0700"
+      delegate_to: localhost
+      run_once: true
+      vars:
+        ansible_connection: local
+
+    - name: Filter production's management plane out of the twin configuration
+      ansible.builtin.command:
+        argv:
+          - python3
+          - "{{ playbook_dir }}/../digital_twin/clab/twin_config_filter.py"
+          - "--management-address"
+          - "{{ ansible_host }}/{{ twin_mgmt_prefix_length }}"
+          - "{{ twin_intended_dir }}/{{ inventory_hostname }}.cfg"
+          - "{{ twin_filtered_dir }}/{{ inventory_hostname }}.cfg"
+      delegate_to: localhost
+      # A rendering step on the control node, not a change to the fabric, so it
+      # stays out of the play recap's changed count.
+      changed_when: false
+      vars:
+        ansible_connection: local
   tasks:
-    - name: Replace the running configuration with the twin intended configuration
+    - name: Replace the running configuration with the filtered twin configuration
       arista.eos.eos_config:
-        src: "{{ playbook_dir }}/../sites/DC1/digital_twins/clab/intended/configs/{{ inventory_hostname }}.cfg"
+        src: "{{ twin_filtered_dir }}/{{ inventory_hostname }}.cfg"
         replace: config
         save_when: modified

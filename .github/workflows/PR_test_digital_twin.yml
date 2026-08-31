@@ -18,9 +18,13 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# There is one digital twin on the containerlab host, so twin runs queue
+# repository-wide rather than per branch, and a run is never cancelled: a
+# cancelled `replace: config` leaves the twin half configured, and the next run
+# would validate that instead of the pull request.
 concurrency:
-  group: pr-twin-${{ github.head_ref }}
-  cancel-in-progress: true
+  group: twin-dc1
+  cancel-in-progress: false
 
 jobs:
   deploy-digital-twin:

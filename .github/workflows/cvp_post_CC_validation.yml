@@ -38,7 +38,10 @@ jobs:
         id: dc1-validation
         continue-on-error: true
         env:
-          ANTA_USERNAME: ${{ secrets.ANTA_USERNAME }}
+          # A repository variable, not a secret: it is a username, and as a
+          # secret GitHub would mask the string "anta" in every log line of
+          # every job in this repository.
+          ANTA_USERNAME: ${{ vars.ANTA_USERNAME || 'anta' }}
           ANTA_PASSWORD: ${{ secrets.ANTA_PASSWORD }}
 
       - name: commit the test catalogs and report to the repository
