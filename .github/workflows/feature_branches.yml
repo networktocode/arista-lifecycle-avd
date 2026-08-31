@@ -19,10 +19,12 @@ jobs:
       contents: write
     container:
       image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
-      # root is the only user GitHub Actions allows in a job container; host
-      # networking lets the job reach the containerlab API server and the lab
-      # bridges on the runner's droplet.
-      options: '--user=root --network host'
+      # root is the only user GitHub Actions allows in a job container; the
+      # runner attaches its own bridge network to the job container, so the
+      # host-gateway alias reaches the containerlab API server on the runner
+      # host, and the host's forwarding rules route the job to the lab
+      # subnets on the runner's droplet.
+      options: '--user=root --add-host=host.docker.internal:host-gateway'
       env:
         PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
     steps:
