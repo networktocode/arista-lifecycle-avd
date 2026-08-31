@@ -95,6 +95,12 @@ class FilterConfigTest(unittest.TestCase):
         self.assertIn("daemon TerminAttr", self.original)
         self.assertNotIn("TerminAttr", self.filtered)
 
+    def test_sflow_is_gone(self):
+        """cEOS-lab rejects every sflow command with "not supported on this hardware platform"."""
+        self.assertIn("sflow run", self.original)
+        self.assertIn("   sflow enable", self.original)
+        self.assertNotIn("sflow", self.filtered)
+
     def test_the_vrf_mgmt_instance_is_kept(self):
         """MLAG's heartbeat, the name servers and NTP all reference it."""
         self.assertIn("vrf instance MGMT", self.filtered)
@@ -166,7 +172,8 @@ class FilterConfigTest(unittest.TestCase):
                 )
             ):
                 self.assertIn(header, self.filtered_blocks, "{0} was dropped".format(header))
-                self.assertEqual(body, self.filtered_blocks[header], "{0} was modified".format(header))
+                expected = "\n".join(line for line in body.splitlines() if line.strip() != "sflow enable")
+                self.assertEqual(expected, self.filtered_blocks[header], "{0} was modified".format(header))
                 compared += 1
         self.assertGreater(compared, 10, "the fixture should carry more than ten validated stanzas")
 
@@ -178,6 +185,11 @@ class FilterConfigTest(unittest.TestCase):
                 "daemon TerminAttr",
                 "ip route vrf MGMT 0.0.0.0/0 192.168.0.1",
                 "ntp local-interface vrf MGMT Management1",
+                "sflow sample 10",
+                "sflow polling-interval 50",
+                "sflow destination 127.0.0.1 6343",
+                "sflow source-interface Loopback0",
+                "sflow run",
             },
         )
         self.assertEqual(
@@ -189,7 +201,13 @@ class FilterConfigTest(unittest.TestCase):
             for header, body in self.filtered_blocks.items()
             if header in self.original_blocks and body != self.original_blocks[header]
         }
-        self.assertEqual(rewritten, {"interface Management1", "management api http-commands"})
+        sflow_interfaces = {
+            header
+            for header, body in self.original_blocks.items()
+            if header.startswith("interface ") and "sflow enable" in body
+        }
+        self.assertGreater(len(sflow_interfaces), 0)
+        self.assertEqual(rewritten, {"interface Management1", "management api http-commands"} | sflow_interfaces)
 
     def test_the_username_cvpadmin_hash_survives(self):
         cvpadmin = [line for line in self.original.splitlines() if line.startswith("username cvpadmin ")]
@@ -265,6 +283,7 @@ class EveryGeneratedTwinConfigTest(unittest.TestCase):
             self.assertNotIn("ip address 192.168.0.", filtered, config.name)
             self.assertNotIn("ip route vrf MGMT 0.0.0.0/0 192.168.0.1", filtered, config.name)
             self.assertNotIn("TerminAttr", filtered, config.name)
+            self.assertNotIn("sflow", filtered, config.name)
 
 
 if __name__ == "__main__":
