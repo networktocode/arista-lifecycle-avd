@@ -1,0 +1,153 @@
+---
+# Validate every pull request against a throwaway containerlab digital twin of
+# DC1 before the change is allowed near production.
+#
+# Prerequisite: a digital twin lab must already be running on the containerlab
+# host (Nautobot's "Create & Deploy Digital Twin" job for DC1 starts one).
+# digital_twin/clab/twin_inventory.py asks the containerlab API server which
+# labs are up and exits 2 when the only lab is production, which fails this
+# workflow fast with a message saying what to launch.
+#
+# Forks are deliberately not supported: a pull_request run from a fork gets no
+# secrets and a read-only token, so it could neither reach the twin nor commit
+# the report. Both jobs skip unless the head branch lives in this repository,
+# and pull_request_target is never used.
+name: Deploy & test configurations in the digital twin
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  deploy-digital-twin:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
+      CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
+    timeout-minutes: 15
+    runs-on: [self-hosted, clab]
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      output_dc1: ${{ steps.dc1-deploy.outcome }}
+    container:
+      image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
+      options: '--user=root --network host'
+      env:
+        PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
+    steps:
+      # The pull request head, not the merge commit: the twin is deployed from
+      # the branch's own artifacts and the report is committed back to it.
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: add the repo to git safe directory
+        run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
+
+      - name: Check DC1 paths for AVD variable changes
+        uses: dorny/paths-filter@v4
+        id: filter-dc1
+        with:
+          filters: |
+            workflows:
+              - 'sites/DC1/group_vars/**'
+              - 'sites/_global_vars/**'
+
+      - name: Build configuration for the DC1 fabric
+        run: make dc1-build
+        id: build-dc1
+        if: steps.filter-dc1.outputs.workflows == 'true'
+
+      - name: Find the running DC1 digital twin
+        run: |
+          python3 digital_twin/clab/twin_inventory.py \
+            --api http://localhost:8080 \
+            --jwt-secret-env CLAB_JWT_SECRET \
+            --production dc1 \
+            --out twin_inventory.yml
+        id: twin-inventory-dc1
+        if: steps.filter-dc1.outputs.workflows == 'true'
+
+      - name: Deploy configuration to the DC1 digital twin
+        run: make dc1-deploy-twin
+        id: dc1-deploy
+        if: steps.filter-dc1.outputs.workflows == 'true'
+
+  Network-validation-digital-twin:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && needs.deploy-digital-twin.outputs.output_dc1 == 'success' }}
+    needs: deploy-digital-twin
+    env:
+      ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
+      CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
+    timeout-minutes: 15
+    runs-on: [self-hosted, clab]
+    permissions:
+      contents: write
+      pull-requests: write
+    container:
+      image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
+      options: '--user=root --network host'
+      env:
+        PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: add the repo to git safe directory
+        run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
+
+      # This job runs in its own container with its own clean checkout, so the
+      # AVD artifacts and the twin inventory from the deploy job are both gone.
+      # Rebuild both here rather than trusting what happens to be committed.
+      - name: Build configuration for the DC1 fabric
+        run: make dc1-build
+
+      - name: Find the running DC1 digital twin
+        run: |
+          python3 digital_twin/clab/twin_inventory.py \
+            --api http://localhost:8080 \
+            --jwt-secret-env CLAB_JWT_SECRET \
+            --production dc1 \
+            --out twin_inventory.yml
+        id: twin-inventory-dc1
+
+      - name: run DC1 validation
+        run: make dc1-validate-twin
+        id: dc1-validation
+        continue-on-error: true
+
+      - name: commit the test catalogs and report to the repository
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add --all
+            git commit -m "Automatic update of the validation report on digital twin for Processing Pull Request #${PR_NUMBER} [skip ci]"
+            git pull --rebase origin "$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          else
+            echo "WARNING: No changes were detected. git commit push action aborted."
+          fi
+        shell: bash
+        env:
+          BRANCH: ${{ github.head_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Prepare DC1 ANTA report
+        if: steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure'
+        run: |
+          echo "# DC1 - Digital Twin Network Validation Report" > /tmp/dc1-comment.md
+          echo "" >> /tmp/dc1-comment.md
+          cat sites/DC1/anta_digital_twin/clab/reports/anta_report.md >> /tmp/dc1-comment.md
+
+      - name: Post DC1 ANTA report as PR comment
+        if: steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: dc1-anta-report
+          path: /tmp/dc1-comment.md

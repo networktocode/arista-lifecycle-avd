@@ -1,0 +1,23 @@
+---
+# Run the AVD ANTA catalogs against the containerlab digital twin over eAPI,
+# using the inventory that digital_twin/clab/twin_inventory.py wrote. root_dir
+# is pinned to sites/DC1 because that inventory lives at the repo root, so the
+# role's default of inventory_dir would look for the AVD artifacts in the wrong
+# place.
+- name: Validate the DC1 digital twin with ANTA over eAPI
+  hosts: DC1_TWIN
+  connection: local
+  gather_facts: false
+  vars:
+    anta_user: admin
+    anta_password: admin
+    avd_catalogs_filters:
+      - skip_tests: [VerifyLoggingErrors, VerifyNTP, VerifyInterfaceDiscards]
+    avd_catalogs_extra_fabric_validation: true
+    root_dir: "{{ playbook_dir }}/../sites/DC1"
+    output_dir_name: "digital_twins/clab/intended"
+    anta_dir_name: "anta_digital_twin/clab"
+  tasks:
+    - name: Validate states on EOS devices
+      ansible.builtin.import_role:
+        name: arista.avd.anta_runner

@@ -1,0 +1,14 @@
+---
+# Push the twin-mode intended configs straight at the containerlab digital twin
+# over eAPI. The twin has no CloudVision onboarding, so this is the counterpart
+# of deploy_digital_twin_clab.yml for a pipeline run: the inventory comes from
+# digital_twin/clab/twin_inventory.py and is passed with -i on the command line.
+- name: Deploy the DC1 digital twin configuration over eAPI
+  hosts: DC1_TWIN
+  gather_facts: false
+  tasks:
+    - name: Replace the running configuration with the twin intended configuration
+      arista.eos.eos_config:
+        src: "{{ playbook_dir }}/../sites/DC1/digital_twins/clab/intended/configs/{{ inventory_hostname }}.cfg"
+        replace: config
+        save_when: modified

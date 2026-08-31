@@ -1,0 +1,89 @@
+---
+# Deploy DC1 to production through CloudVision as a Service when a change lands
+# on main, then validate the fabric with ANTA and commit the report back.
+name: Deploy & test configurations
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-prod:
+    env:
+      ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
+      CVAAS_SERVER: ${{ secrets.CVAAS_SERVER }}
+      CVAAS_TOKEN: ${{ secrets.CVAAS_TOKEN }}
+    timeout-minutes: 15
+    runs-on: [self-hosted, clab]
+    outputs:
+      output_dc1: ${{ steps.dc1-deploy.outcome }}
+    container:
+      image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
+      options: '--user=root --network host'
+      env:
+        PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: add the repo to git safe directory
+        run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
+
+      - name: Check DC1 paths for AVD variable changes
+        uses: dorny/paths-filter@v4
+        id: filter-dc1
+        with:
+          filters: |
+            workflows:
+              - 'sites/DC1/group_vars/**'
+              - 'sites/_global_vars/**'
+
+      - name: Deploy configuration for the DC1 fabric
+        id: dc1-deploy
+        run: ansible-playbook playbooks/deploy.yml -i sites/DC1/inventory.yml -e 'target=DC1 cv_submit_workspace=true cv_run_change_control=true'
+        if: steps.filter-dc1.outputs.workflows == 'true'
+
+  Network-validation:
+    if: ${{ needs.deploy-prod.outputs.output_dc1 == 'success' }}
+    needs: deploy-prod
+    env:
+      ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
+      ANTA_USERNAME: ${{ secrets.ANTA_USERNAME }}
+      ANTA_PASSWORD: ${{ secrets.ANTA_PASSWORD }}
+    timeout-minutes: 15
+    runs-on: [self-hosted, clab]
+    permissions:
+      contents: write
+    container:
+      image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
+      options: '--user=root --network host'
+      env:
+        PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: add the repo to git safe directory
+        run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
+
+      - name: run DC1 validation
+        run: ansible-playbook playbooks/validate.yml -i sites/DC1/inventory.yml -e 'target=DC1'
+        id: dc1-validation
+        continue-on-error: true
+
+      - name: commit the test catalogs and report to the repository
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add --all
+            git commit -m "Automatic update of the validation report after pipeline execution [skip ci]"
+            git pull --rebase origin "$BRANCH"
+            git push origin HEAD:"$BRANCH"
+          else
+            echo "WARNING: No changes were detected. git commit push action aborted."
+          fi
+        shell: bash
+        env:
+          BRANCH: ${{ github.ref_name }}

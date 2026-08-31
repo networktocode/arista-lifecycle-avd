@@ -28,6 +28,53 @@ reference repo, and they are committed here in the clear: the hash appears in
 BGP peer password in `config_contexts/dc1_fabric_settings.yml`. Both are also carried into the
 generated files under `sites/`. Replace them before pointing this repo at anything real.
 
+## Pipeline
+
+Four GitHub workflows in `.github/workflows/` carry a change from a branch to production. All four
+run on the self-hosted runner labelled `self-hosted, clab`, in the AVD universal container
+(`ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0`, `--user=root --network host`), and
+all four are gated on a `dorny/paths-filter` check of `sites/DC1/group_vars/**` and
+`sites/_global_vars/**` so unrelated commits do not touch the fabric.
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| `feature_branches.yml` | push to any branch but `main` | `make dc1-build`, then commits the regenerated intended configs, documentation, twin configs, and amplification report back to the branch. |
+| `PR_test_digital_twin.yml` | `pull_request` (opened, edited, synchronize) | Job `deploy-digital-twin` builds, finds the running twin, and pushes the twin configs over eAPI. Job `Network-validation-digital-twin` runs ANTA against the twin, commits the report, and posts it as a sticky pull request comment. The second job runs only if the deploy succeeded. |
+| `main_branch.yml` | push to `main` | Job `deploy-prod` deploys DC1 through CloudVision as a Service with `cv_submit_workspace=true cv_run_change_control=true`. Job `Network-validation` then runs ANTA against production and commits the report. The second job runs only if the deploy succeeded. |
+| `cvp_post_CC_validation.yml` | `repository_dispatch`, type `validation_trigger` | Runs the production ANTA validation on demand and commits the report. Post this dispatch when a CloudVision change control finishes. |
+
+Workflow-generated commits are authored as `github-actions[bot]` and carry `[skip ci]`, so a commit
+back never retriggers the pipeline.
+
+### Secrets
+
+| Secret | Used by |
+| --- | --- |
+| `CLAB_JWT_SECRET` | `PR_test_digital_twin.yml`, to mint a token for the containerlab API server |
+| `CVAAS_SERVER`, `CVAAS_TOKEN` | `main_branch.yml`, read by `playbooks/deploy.yml` |
+| `ANTA_USERNAME`, `ANTA_PASSWORD` | `main_branch.yml` and `cvp_post_CC_validation.yml`, read by `playbooks/validate.yml` |
+
+The digital twin needs no credentials of its own: containerlab boots cEOS with `admin`/`admin` and
+`twin_inventory.py` writes those into the generated inventory.
+
+### The digital twin prerequisite
+
+`PR_test_digital_twin.yml` does not create the twin, it finds one. A twin lab for DC1 must already
+be running on the containerlab host before the pull request is opened or updated; in the demo,
+Nautobot's "Create & Deploy Digital Twin" job for DC1 starts it.
+`digital_twin/clab/twin_inventory.py` asks the containerlab API server (`http://localhost:8080`,
+reachable because the job container uses host networking on the runner's droplet) which labs are
+up, ignores the production lab `dc1`, and writes `twin_inventory.yml` for the rest. If production
+is the only lab running, the script exits 2 with a message saying which Nautobot job to launch, and
+the pull request validation fails immediately rather than testing nothing.
+
+### Forks
+
+Pull requests from forks are not validated. A `pull_request` run from a fork gets no secrets and a
+read-only token, so it could neither reach the twin nor commit the report; both jobs in
+`PR_test_digital_twin.yml` skip unless the head branch lives in this repository. `pull_request_target`
+is deliberately not used anywhere.
+
 ## Reset
 
 `main` is the demo's starting point and is tagged `baseline`. `invoke reset-demo` in the workshop

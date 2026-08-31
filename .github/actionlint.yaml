@@ -1,0 +1,6 @@
+---
+# The pipeline runs on one self-hosted runner on the containerlab droplet.
+# Declared here so actionlint does not report "clab" as an unknown label.
+self-hosted-runner:
+  labels:
+    - clab
