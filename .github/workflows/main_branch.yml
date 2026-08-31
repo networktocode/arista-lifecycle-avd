@@ -20,7 +20,7 @@ jobs:
       output_dc1: ${{ steps.dc1-deploy.outcome }}
     container:
       image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
-      options: '--user=root --network host'
+      options: '--user=root --add-host=host.docker.internal:host-gateway'
       env:
         PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
     steps:
@@ -58,7 +58,7 @@ jobs:
       contents: write
     container:
       image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
-      options: '--user=root --network host'
+      options: '--user=root --add-host=host.docker.internal:host-gateway'
       env:
         PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
     steps:

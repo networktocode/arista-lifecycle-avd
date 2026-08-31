@@ -40,7 +40,7 @@ jobs:
       output_dc1: ${{ steps.dc1-deploy.outcome }}
     container:
       image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
-      options: '--user=root --network host'
+      options: '--user=root --add-host=host.docker.internal:host-gateway'
       env:
         PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
     steps:
@@ -71,7 +71,7 @@ jobs:
       - name: Find the running DC1 digital twin
         run: |
           python3 digital_twin/clab/twin_inventory.py \
-            --api http://localhost:8080 \
+            --api http://host.docker.internal:8080 \
             --jwt-secret-env CLAB_JWT_SECRET \
             --production dc1 \
             --out twin_inventory.yml
@@ -97,7 +97,7 @@ jobs:
       pull-requests: write
     container:
       image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
-      options: '--user=root --network host'
+      options: '--user=root --add-host=host.docker.internal:host-gateway'
       env:
         PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
     steps:
@@ -118,7 +118,7 @@ jobs:
       - name: Find the running DC1 digital twin
         run: |
           python3 digital_twin/clab/twin_inventory.py \
-            --api http://localhost:8080 \
+            --api http://host.docker.internal:8080 \
             --jwt-secret-env CLAB_JWT_SECRET \
             --production dc1 \
             --out twin_inventory.yml
