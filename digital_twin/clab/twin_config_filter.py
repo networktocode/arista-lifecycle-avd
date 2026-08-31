@@ -41,6 +41,9 @@ What is removed, and why each one is a management-plane stanza:
   twin never has (nothing binds ``/tmp/cv-onboarding-token`` into a twin
   node), so on the twin the agent can only restart in a loop for the life of
   the lab. Removing it loses nothing the pull request validates.
+* ``sflow ...`` and the per-interface ``sflow enable`` lines - cEOS-lab has no
+  sflow hardware support and rejects every sflow command with "not supported
+  on this hardware platform", which fails the whole configuration session.
 
 What is deliberately KEPT is ``vrf instance MGMT``. It is referenced from
 stanzas that are not management-plane and must be validated as rendered -
@@ -93,6 +96,7 @@ REMOVED_BLOCK_PREFIXES = (
 # Top-level single lines dropped.
 REMOVED_LINE_PREFIXES = (
     "ntp local-interface",
+    "sflow ",
     "username admin ",
 )
 
@@ -163,6 +167,10 @@ def filter_config(text: str, management_address: str | None = None) -> str:
         if top_level and _is_removed_line(line):
             index += 1
             index = _skip_one_delimiter(lines, index)
+            continue
+
+        if line.strip() == "sflow enable":
+            index += 1
             continue
 
         kept.append(line)
