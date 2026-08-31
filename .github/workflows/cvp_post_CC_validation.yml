@@ -17,8 +17,6 @@ jobs:
   Network-validation:
     env:
       ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
-      ANTA_USERNAME: ${{ secrets.ANTA_USERNAME }}
-      ANTA_PASSWORD: ${{ secrets.ANTA_PASSWORD }}
     timeout-minutes: 15
     runs-on: [self-hosted, clab]
     permissions:
@@ -39,6 +37,9 @@ jobs:
         run: ansible-playbook playbooks/validate.yml -i sites/DC1/inventory.yml -e 'target=DC1'
         id: dc1-validation
         continue-on-error: true
+        env:
+          ANTA_USERNAME: ${{ secrets.ANTA_USERNAME }}
+          ANTA_PASSWORD: ${{ secrets.ANTA_PASSWORD }}
 
       - name: commit the test catalogs and report to the repository
         run: |

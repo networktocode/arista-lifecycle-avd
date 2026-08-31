@@ -32,14 +32,16 @@ generated files under `sites/`. Replace them before pointing this repo at anythi
 
 Four GitHub workflows in `.github/workflows/` carry a change from a branch to production. All four
 run on the self-hosted runner labelled `self-hosted, clab`, in the AVD universal container
-(`ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0`, `--user=root --network host`), and
-all four are gated on a `dorny/paths-filter` check of `sites/DC1/group_vars/**` and
-`sites/_global_vars/**` so unrelated commits do not touch the fabric.
+(`ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0`, `--user=root --network host`). The
+three event-driven workflows (`feature_branches.yml`, `PR_test_digital_twin.yml`,
+`main_branch.yml`) are gated on a `dorny/paths-filter` check of `sites/DC1/group_vars/**` and
+`sites/_global_vars/**` so unrelated commits do not touch the fabric. `cvp_post_CC_validation.yml`
+has no such filter: a change control dispatch is an explicit request to validate now.
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
 | `feature_branches.yml` | push to any branch but `main` | `make dc1-build`, then commits the regenerated intended configs, documentation, twin configs, and amplification report back to the branch. |
-| `PR_test_digital_twin.yml` | `pull_request` (opened, edited, synchronize) | Job `deploy-digital-twin` builds, finds the running twin, and pushes the twin configs over eAPI. Job `Network-validation-digital-twin` runs ANTA against the twin, commits the report, and posts it as a sticky pull request comment. The second job runs only if the deploy succeeded. |
+| `PR_test_digital_twin.yml` | `pull_request` (opened, synchronize, reopened) | Job `deploy-digital-twin` builds, finds the running twin, and pushes the twin configs over eAPI. Job `Network-validation-digital-twin` runs ANTA against the twin, commits the report, posts it as a sticky pull request comment, and fails the check if validation failed. The second job runs only if the deploy succeeded. |
 | `main_branch.yml` | push to `main` | Job `deploy-prod` deploys DC1 through CloudVision as a Service with `cv_submit_workspace=true cv_run_change_control=true`. Job `Network-validation` then runs ANTA against production and commits the report. The second job runs only if the deploy succeeded. |
 | `cvp_post_CC_validation.yml` | `repository_dispatch`, type `validation_trigger` | Runs the production ANTA validation on demand and commits the report. Post this dispatch when a CloudVision change control finishes. |
 

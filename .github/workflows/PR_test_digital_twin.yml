@@ -16,14 +16,17 @@ name: Deploy & test configurations in the digital twin
 
 on:
   pull_request:
-    types: [opened, edited, synchronize]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: pr-twin-${{ github.head_ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy-digital-twin:
     if: github.event.pull_request.head.repo.full_name == github.repository
     env:
       ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
-      CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
     timeout-minutes: 15
     runs-on: [self-hosted, clab]
     permissions:
@@ -70,6 +73,8 @@ jobs:
             --out twin_inventory.yml
         id: twin-inventory-dc1
         if: steps.filter-dc1.outputs.workflows == 'true'
+        env:
+          CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
 
       - name: Deploy configuration to the DC1 digital twin
         run: make dc1-deploy-twin
@@ -81,7 +86,6 @@ jobs:
     needs: deploy-digital-twin
     env:
       ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
-      CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
     timeout-minutes: 15
     runs-on: [self-hosted, clab]
     permissions:
@@ -115,6 +119,8 @@ jobs:
             --production dc1 \
             --out twin_inventory.yml
         id: twin-inventory-dc1
+        env:
+          CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
 
       - name: run DC1 validation
         run: make dc1-validate-twin
@@ -139,15 +145,23 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
 
       - name: Prepare DC1 ANTA report
-        if: steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure'
+        if: always() && (steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure')
         run: |
           echo "# DC1 - Digital Twin Network Validation Report" > /tmp/dc1-comment.md
           echo "" >> /tmp/dc1-comment.md
-          cat sites/DC1/anta_digital_twin/clab/reports/anta_report.md >> /tmp/dc1-comment.md
+          if [ -f sites/DC1/anta_digital_twin/clab/reports/anta_report.md ]; then
+            cat sites/DC1/anta_digital_twin/clab/reports/anta_report.md >> /tmp/dc1-comment.md
+          else
+            echo "validation produced no report; check the workflow logs" >> /tmp/dc1-comment.md
+          fi
 
       - name: Post DC1 ANTA report as PR comment
-        if: steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure'
+        if: always() && (steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure')
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: dc1-anta-report
           path: /tmp/dc1-comment.md
+
+      - name: Fail the check if DC1 validation failed
+        if: always() && steps.dc1-validation.outcome == 'failure'
+        run: exit 1
