@@ -82,8 +82,10 @@ same commit.
 
 So the playbook renders each host's configuration through
 `digital_twin/clab/twin_config_filter.py` first, into a directory under `/tmp`. The filter drops
-the management-plane stanzas and appends a tail that restores `admin`/`admin`, `interface
-Management1` with the node's own twin address in the default VRF, and eAPI in the default VRF.
+the management-plane stanzas, plus `daemon TerminAttr` (the twin never has the CloudVision
+onboarding token the agent needs, so on the twin it could only restart in a loop), and appends a
+tail that restores `admin`/`admin`, `interface Management1` with the node's own twin address in the
+default VRF, and eAPI over https in the default VRF.
 `vrf instance MGMT` is deliberately kept: `mlag configuration`'s heartbeat peer address, the name
 servers, and the NTP servers all reference it, and an MGMT VRF with no interface in it cannot carry
 a session. Everything the pull request is validating - BGP, VLANs, VRFs, Ethernet interfaces, MLAG,

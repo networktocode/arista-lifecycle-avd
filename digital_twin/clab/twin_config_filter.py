@@ -37,6 +37,10 @@ What is removed, and why each one is a management-plane stanza:
 * ``ntp local-interface ...`` - names the management interface that is gone.
 * ``username admin ...`` - never present in an intended config; removed so the
   tail's own ``admin`` account cannot be duplicated when this runs twice.
+* ``daemon TerminAttr`` - streams to CloudVision with an onboarding token the
+  twin never has (nothing binds ``/tmp/cv-onboarding-token`` into a twin
+  node), so on the twin the agent can only restart in a loop for the life of
+  the lab. Removing it loses nothing the pull request validates.
 
 What is deliberately KEPT is ``vrf instance MGMT``. It is referenced from
 stanzas that are not management-plane and must be validated as rendered -
@@ -80,6 +84,7 @@ TWIN_MGMT_INTERFACE = "Management1"
 
 # Top-level stanzas dropped whole, with everything indented under them.
 REMOVED_BLOCK_PREFIXES = (
+    "daemon TerminAttr",
     "interface Management",
     "management api http-commands",
     "management ssh",
@@ -91,12 +96,11 @@ REMOVED_LINE_PREFIXES = (
     "username admin ",
 )
 
-TAIL_CREDENTIALS = (
-    "username admin privilege 15 role network-admin secret 0 admin",
-)
+TAIL_CREDENTIALS = ("username admin privilege 15 role network-admin secret 0 admin",)
 
 TAIL_EAPI = (
     "management api http-commands",
+    "   protocol https",
     "   no shutdown",
     "   vrf default",
     "      no shutdown",

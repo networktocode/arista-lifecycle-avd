@@ -90,6 +90,11 @@ class FilterConfigTest(unittest.TestCase):
         self.assertIn("ntp local-interface", self.original)
         self.assertNotIn("ntp local-interface", self.filtered)
 
+    def test_the_terminattr_daemon_is_gone(self):
+        """It streams to CloudVision with an onboarding token the twin never has."""
+        self.assertIn("daemon TerminAttr", self.original)
+        self.assertNotIn("TerminAttr", self.filtered)
+
     def test_the_vrf_mgmt_instance_is_kept(self):
         """MLAG's heartbeat, the name servers and NTP all reference it."""
         self.assertIn("vrf instance MGMT", self.filtered)
@@ -100,9 +105,7 @@ class FilterConfigTest(unittest.TestCase):
     # --- the reachability tail --------------------------------------------
 
     def test_the_tail_is_present_exactly_once(self):
-        self.assertEqual(
-            self.filtered.count("username admin privilege 15 role network-admin secret 0 admin"), 1
-        )
+        self.assertEqual(self.filtered.count("username admin privilege 15 role network-admin secret 0 admin"), 1)
         self.assertEqual(self.filtered.count("management api http-commands"), 1)
         self.assertEqual(self.filtered.count("interface Management1"), 1)
         self.assertEqual(self.filtered.count("   vrf default"), 1)
@@ -117,6 +120,7 @@ class FilterConfigTest(unittest.TestCase):
                     "   ip address " + TWIN_ADDRESS,
                     "!",
                     "management api http-commands",
+                    "   protocol https",
                     "   no shutdown",
                     "   vrf default",
                     "      no shutdown",
@@ -151,7 +155,16 @@ class FilterConfigTest(unittest.TestCase):
         """BGP, the VLANs, and every Ethernet interface come through unchanged."""
         compared = 0
         for header, body in self.original_blocks.items():
-            if header.startswith(("router bgp", "vlan ", "interface Ethernet", "interface Vlan", "interface Port-Channel", "mlag configuration")):
+            if header.startswith(
+                (
+                    "router bgp",
+                    "vlan ",
+                    "interface Ethernet",
+                    "interface Vlan",
+                    "interface Port-Channel",
+                    "mlag configuration",
+                )
+            ):
                 self.assertIn(header, self.filtered_blocks, "{0} was dropped".format(header))
                 self.assertEqual(body, self.filtered_blocks[header], "{0} was modified".format(header))
                 compared += 1
@@ -162,6 +175,7 @@ class FilterConfigTest(unittest.TestCase):
         self.assertEqual(
             set(self.original_blocks) - set(self.filtered_blocks),
             {
+                "daemon TerminAttr",
                 "ip route vrf MGMT 0.0.0.0/0 192.168.0.1",
                 "ntp local-interface vrf MGMT Management1",
             },
@@ -197,24 +211,21 @@ class FilterConfigTest(unittest.TestCase):
         self.assertEqual(
             filter_config(""),
             "!\nusername admin privilege 15 role network-admin secret 0 admin\n"
-            "!\nmanagement api http-commands\n   no shutdown\n   vrf default\n      no shutdown\n!\n",
+            "!\nmanagement api http-commands\n   protocol https\n   no shutdown\n"
+            "   vrf default\n      no shutdown\n!\n",
         )
 
     def test_the_cli_writes_the_filtered_file(self):
         with tempfile.TemporaryDirectory() as workdir:
             destination = Path(workdir) / "dc1-leaf1.cfg"
-            code = twin_config_filter.main(
-                ["--management-address", TWIN_ADDRESS, str(FIXTURE), str(destination)]
-            )
+            code = twin_config_filter.main(["--management-address", TWIN_ADDRESS, str(FIXTURE), str(destination)])
             self.assertEqual(code, 0)
             self.assertEqual(destination.read_text(encoding="utf-8"), self.filtered)
 
     def test_the_cli_reports_an_unreadable_source(self):
         with tempfile.TemporaryDirectory() as workdir, io.StringIO() as captured:
             with redirect_stderr(captured):
-                code = twin_config_filter.main(
-                    [str(Path(workdir) / "missing.cfg"), str(Path(workdir) / "out.cfg")]
-                )
+                code = twin_config_filter.main([str(Path(workdir) / "missing.cfg"), str(Path(workdir) / "out.cfg")])
             self.assertEqual(code, 1)
             self.assertIn("missing.cfg", captured.getvalue())
 
@@ -253,6 +264,7 @@ class EveryGeneratedTwinConfigTest(unittest.TestCase):
             self.assertIn("username admin privilege 15 role network-admin secret 0 admin", filtered)
             self.assertNotIn("ip address 192.168.0.", filtered, config.name)
             self.assertNotIn("ip route vrf MGMT 0.0.0.0/0 192.168.0.1", filtered, config.name)
+            self.assertNotIn("TerminAttr", filtered, config.name)
 
 
 if __name__ == "__main__":
