@@ -4,7 +4,7 @@
 
 | | | | | |
 |:---:|:---:|:---:|:---:|:---:|
-| <h2>179</h2> | | <h2>1,590</h2> | | <h2>9x</h2> |
+| <h2>180</h2> | | <h2>1,590</h2> | | <h2>9x</h2> |
 | **Lines of Input** | &xrarr; | **Lines of Config** | = | **Amplification** |
 
 </div>
@@ -16,15 +16,15 @@
 
 ### Data Model Input
 
-*179 total lines*
+*180 total lines*
 
 | File | Lines |
 |------|------:|
 | **`sites/_global_vars/`** | **99** |
 | &nbsp;&nbsp;&nbsp;&nbsp;`fabric_settings.yml` | 37 |
 | &nbsp;&nbsp;&nbsp;&nbsp;`management.yml` | 62 |
-| **`sites/DC1/group_vars/`** | **80** |
-| &nbsp;&nbsp;&nbsp;&nbsp;`DC1.yml` | 5 |
+| **`sites/DC1/group_vars/`** | **81** |
+| &nbsp;&nbsp;&nbsp;&nbsp;`DC1.yml` | 6 |
 | &nbsp;&nbsp;&nbsp;&nbsp;`L3LEAFS.yml` | 61 |
 | &nbsp;&nbsp;&nbsp;&nbsp;`SPINES.yml` | 14 |
 
