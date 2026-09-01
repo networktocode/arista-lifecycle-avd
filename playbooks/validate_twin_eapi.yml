@@ -11,8 +11,19 @@
   vars:
     anta_user: admin
     anta_password: admin
+    # Expected twin deltas, not regressions: VerifyRunningConfigDiffs trips on the
+    # startup-config banner comment (container name versus configured hostname), and
+    # VerifyMlagInterfaces reports the server-facing port-channel down because the lab
+    # host image runs bare interfaces without LACP.
     avd_catalogs_filters:
-      - skip_tests: [VerifyLoggingErrors, VerifyNTP, VerifyInterfaceDiscards]
+      - skip_tests:
+          [
+            VerifyLoggingErrors,
+            VerifyNTP,
+            VerifyInterfaceDiscards,
+            VerifyRunningConfigDiffs,
+            VerifyMlagInterfaces,
+          ]
     avd_catalogs_extra_fabric_validation: true
     root_dir: "{{ playbook_dir }}/../sites/DC1"
     output_dir_name: "digital_twins/clab/intended"
