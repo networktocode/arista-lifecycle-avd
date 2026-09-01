@@ -1,5 +1,4 @@
 Device,Test Name,Test Status,Message(s),Test description,Test category
-dc1-leaf1,VerifyBGPPeerSession,failure,Peer: 10.99.1.129 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.130 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.0 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.2 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.254.1 VRF: BLUE - Not found - Peer: 10.101.254.1 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.254.1 VRF: GREEN - Not found,Verifies the session state of BGP peers.,BGP
 dc1-leaf1,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
 +++ system:/running-config
 @@ -1,4 +1,4 @@
@@ -9,17 +8,7 @@ dc1-leaf1,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
  no aaa root
  !
 ",Verifies there is no difference between the running-config and the startup-config.,Configuration
-dc1-leaf1,VerifyLLDPNeighbors,failure,Port: Ethernet49/1 Neighbor: dc1-spine1 Neighbor Port: Ethernet1/1 - Port not found - Port: Ethernet50/1 Neighbor: dc1-spine2 Neighbor Port: Ethernet1/1 - Port not found - Port: Ethernet51/1 Neighbor: dc1-leaf2 Neighbor Port: Ethernet51/1 - Port not found - Port: Ethernet52/1 Neighbor: dc1-leaf2 Neighbor Port: Ethernet52/1 - Port not found,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
-dc1-leaf1,VerifyReachability,failure,Destination 10.99.1.2 (dc1-leaf2) from 10.99.1.1 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.3 (dc1-leaf3) from 10.99.1.1 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.4 (dc1-leaf4) from 10.99.1.1 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.129 (dc1-spine1) from 10.99.1.1 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.130 (dc1-spine2) from 10.99.1.1 in VRF default - Packet loss detected - Transmitted: 1 Received: 0,Verifies VTEP fabric-wide underlay reachability.,Connectivity
-dc1-leaf1,VerifyReachability,failure,Destination 10.101.0.0 (dc1-spine1_Ethernet1/1) from 10.101.0.1 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.2 (dc1-spine2_Ethernet1/1) from 10.101.0.3 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address',Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
-dc1-leaf1,VerifyReachability,failure,"'ping vrf BLUE 10.101.254.1 size 100 repeat 1' failed on dc1-leaf1: VRF 'BLUE' is not active
-'ping vrf GREEN 10.101.254.1 size 100 repeat 1' failed on dc1-leaf1: VRF 'GREEN' is not active",Verifies reachability to BGP neighbors.,Connectivity
-dc1-leaf1,VerifyInterfaceErrDisabled,failure,Interface: Ethernet49/1 - Error disabled - Causes: mlagissu - Interface: Ethernet1 - Error disabled - Causes: mlagissu - Interface: Ethernet50/1 - Error disabled - Causes: mlagissu,Verifies there are no interfaces in the errdisabled state.,Interfaces
-dc1-leaf1,VerifyInterfacesStatus,failure,"Interface: Ethernet49/1 - Not configured - Interface: Ethernet50/1 - Not configured - Interface: Ethernet51/1 - Not configured - Interface: Ethernet52/1 - Not configured - Interface: Port-Channel511 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan100 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan200 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan3500 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan3501 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan4093 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
-dc1-leaf1,VerifyPortChannels,failure,"Interface: Port-Channel511 - Inactive port(s) - Ethernet51/1, Ethernet52/1",Verifies there are no inactive ports in port channels.,Interfaces
-dc1-leaf1,VerifyMlagStatus,failure,MLAG negotiation status mismatch - Expected: connected Actual: connecting - Operational state of the MLAG peer link is not correct - Expected: up Actual: lowerLayerDown,Verifies the health status of the MLAG configuration.,MLAG
-dc1-leaf1,VerifyIPv4RoutePresencePerVRF,failure,Prefix: 10.99.1.2/32 VRF: default - Route not found - Prefix: 10.99.1.3/32 VRF: default - Route not found - Prefix: 10.99.1.4/32 VRF: default - Route not found - Prefix: 10.99.1.129/32 VRF: default - Route not found - Prefix: 10.99.1.130/32 VRF: default - Route not found - Prefix: 10.101.1.3/32 VRF: default - Route not found,Verifies that the provided IPv4 prefixes are present in the routing table.,Routing
-dc1-leaf2,VerifyBGPPeerSession,failure,Peer: 10.99.1.129 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.130 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.4 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.6 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.254.0 VRF: BLUE - Not found - Peer: 10.101.254.0 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.254.0 VRF: GREEN - Not found,Verifies the session state of BGP peers.,BGP
+dc1-leaf1,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
 dc1-leaf2,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
 +++ system:/running-config
 @@ -1,4 +1,4 @@
@@ -29,17 +18,7 @@ dc1-leaf2,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
  no aaa root
  !
 ",Verifies there is no difference between the running-config and the startup-config.,Configuration
-dc1-leaf2,VerifyLLDPNeighbors,failure,Port: Ethernet49/1 Neighbor: dc1-spine1 Neighbor Port: Ethernet1/2 - Port not found - Port: Ethernet50/1 Neighbor: dc1-spine2 Neighbor Port: Ethernet1/2 - Port not found - Port: Ethernet51/1 Neighbor: dc1-leaf1 Neighbor Port: Ethernet51/1 - Port not found - Port: Ethernet52/1 Neighbor: dc1-leaf1 Neighbor Port: Ethernet52/1 - Port not found,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
-dc1-leaf2,VerifyReachability,failure,Destination 10.99.1.1 (dc1-leaf1) from 10.99.1.2 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.3 (dc1-leaf3) from 10.99.1.2 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.4 (dc1-leaf4) from 10.99.1.2 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.129 (dc1-spine1) from 10.99.1.2 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.130 (dc1-spine2) from 10.99.1.2 in VRF default - Packet loss detected - Transmitted: 1 Received: 0,Verifies VTEP fabric-wide underlay reachability.,Connectivity
-dc1-leaf2,VerifyReachability,failure,Destination 10.101.0.4 (dc1-spine1_Ethernet1/2) from 10.101.0.5 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.6 (dc1-spine2_Ethernet1/2) from 10.101.0.7 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address',Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
-dc1-leaf2,VerifyReachability,failure,"'ping vrf BLUE 10.101.254.0 size 100 repeat 1' failed on dc1-leaf2: VRF 'BLUE' is not active
-'ping vrf GREEN 10.101.254.0 size 100 repeat 1' failed on dc1-leaf2: VRF 'GREEN' is not active",Verifies reachability to BGP neighbors.,Connectivity
-dc1-leaf2,VerifyInterfaceErrDisabled,failure,Interface: Ethernet49/1 - Error disabled - Causes: mlagissu - Interface: Ethernet1 - Error disabled - Causes: mlagissu - Interface: Ethernet50/1 - Error disabled - Causes: mlagissu,Verifies there are no interfaces in the errdisabled state.,Interfaces
-dc1-leaf2,VerifyInterfacesStatus,failure,"Interface: Ethernet49/1 - Not configured - Interface: Ethernet50/1 - Not configured - Interface: Ethernet51/1 - Not configured - Interface: Ethernet52/1 - Not configured - Interface: Port-Channel511 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan100 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan200 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan3500 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan3501 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan4093 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
-dc1-leaf2,VerifyPortChannels,failure,"Interface: Port-Channel511 - Inactive port(s) - Ethernet51/1, Ethernet52/1",Verifies there are no inactive ports in port channels.,Interfaces
-dc1-leaf2,VerifyMlagStatus,failure,MLAG negotiation status mismatch - Expected: connected Actual: connecting - Operational state of the MLAG peer link is not correct - Expected: up Actual: lowerLayerDown,Verifies the health status of the MLAG configuration.,MLAG
-dc1-leaf2,VerifyIPv4RoutePresencePerVRF,failure,Prefix: 10.99.1.1/32 VRF: default - Route not found - Prefix: 10.99.1.3/32 VRF: default - Route not found - Prefix: 10.99.1.4/32 VRF: default - Route not found - Prefix: 10.99.1.129/32 VRF: default - Route not found - Prefix: 10.99.1.130/32 VRF: default - Route not found - Prefix: 10.101.1.3/32 VRF: default - Route not found,Verifies that the provided IPv4 prefixes are present in the routing table.,Routing
-dc1-leaf3,VerifyBGPPeerSession,failure,Peer: 10.99.1.129 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.130 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.8 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.10 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.254.1 VRF: BLUE - Not found - Peer: 10.101.254.1 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.254.1 VRF: GREEN - Not found,Verifies the session state of BGP peers.,BGP
+dc1-leaf2,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
 dc1-leaf3,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
 +++ system:/running-config
 @@ -1,4 +1,4 @@
@@ -49,17 +28,7 @@ dc1-leaf3,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
  no aaa root
  !
 ",Verifies there is no difference between the running-config and the startup-config.,Configuration
-dc1-leaf3,VerifyLLDPNeighbors,failure,Port: Ethernet49/1 Neighbor: dc1-spine1 Neighbor Port: Ethernet1/3 - Port not found - Port: Ethernet50/1 Neighbor: dc1-spine2 Neighbor Port: Ethernet1/3 - Port not found - Port: Ethernet51/1 Neighbor: dc1-leaf4 Neighbor Port: Ethernet51/1 - Port not found - Port: Ethernet52/1 Neighbor: dc1-leaf4 Neighbor Port: Ethernet52/1 - Port not found,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
-dc1-leaf3,VerifyReachability,failure,Destination 10.99.1.1 (dc1-leaf1) from 10.99.1.3 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.2 (dc1-leaf2) from 10.99.1.3 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.4 (dc1-leaf4) from 10.99.1.3 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.129 (dc1-spine1) from 10.99.1.3 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.130 (dc1-spine2) from 10.99.1.3 in VRF default - Packet loss detected - Transmitted: 1 Received: 0,Verifies VTEP fabric-wide underlay reachability.,Connectivity
-dc1-leaf3,VerifyReachability,failure,Destination 10.101.0.8 (dc1-spine1_Ethernet1/3) from 10.101.0.9 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.10 (dc1-spine2_Ethernet1/3) from 10.101.0.11 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address',Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
-dc1-leaf3,VerifyReachability,failure,"'ping vrf BLUE 10.101.254.1 size 100 repeat 1' failed on dc1-leaf3: VRF 'BLUE' is not active
-'ping vrf GREEN 10.101.254.1 size 100 repeat 1' failed on dc1-leaf3: VRF 'GREEN' is not active",Verifies reachability to BGP neighbors.,Connectivity
-dc1-leaf3,VerifyInterfaceErrDisabled,failure,Interface: Ethernet49/1 - Error disabled - Causes: mlagissu - Interface: Ethernet1 - Error disabled - Causes: mlagissu - Interface: Ethernet50/1 - Error disabled - Causes: mlagissu,Verifies there are no interfaces in the errdisabled state.,Interfaces
-dc1-leaf3,VerifyInterfacesStatus,failure,"Interface: Ethernet49/1 - Not configured - Interface: Ethernet50/1 - Not configured - Interface: Ethernet51/1 - Not configured - Interface: Ethernet52/1 - Not configured - Interface: Port-Channel511 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan100 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan200 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan3500 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan3501 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan4093 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
-dc1-leaf3,VerifyPortChannels,failure,"Interface: Port-Channel511 - Inactive port(s) - Ethernet51/1, Ethernet52/1",Verifies there are no inactive ports in port channels.,Interfaces
-dc1-leaf3,VerifyMlagStatus,failure,MLAG negotiation status mismatch - Expected: connected Actual: connecting - Operational state of the MLAG peer link is not correct - Expected: up Actual: lowerLayerDown,Verifies the health status of the MLAG configuration.,MLAG
-dc1-leaf3,VerifyIPv4RoutePresencePerVRF,failure,Prefix: 10.99.1.1/32 VRF: default - Route not found - Prefix: 10.99.1.2/32 VRF: default - Route not found - Prefix: 10.99.1.4/32 VRF: default - Route not found - Prefix: 10.99.1.129/32 VRF: default - Route not found - Prefix: 10.99.1.130/32 VRF: default - Route not found - Prefix: 10.101.1.1/32 VRF: default - Route not found,Verifies that the provided IPv4 prefixes are present in the routing table.,Routing
-dc1-leaf4,VerifyBGPPeerSession,failure,Peer: 10.99.1.129 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.130 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.12 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.14 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.254.0 VRF: BLUE - Not found - Peer: 10.101.254.0 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.254.0 VRF: GREEN - Not found,Verifies the session state of BGP peers.,BGP
+dc1-leaf3,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
 dc1-leaf4,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
 +++ system:/running-config
 @@ -1,4 +1,4 @@
@@ -69,17 +38,7 @@ dc1-leaf4,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
  no aaa root
  !
 ",Verifies there is no difference between the running-config and the startup-config.,Configuration
-dc1-leaf4,VerifyLLDPNeighbors,failure,Port: Ethernet49/1 Neighbor: dc1-spine1 Neighbor Port: Ethernet1/4 - Port not found - Port: Ethernet50/1 Neighbor: dc1-spine2 Neighbor Port: Ethernet1/4 - Port not found - Port: Ethernet51/1 Neighbor: dc1-leaf3 Neighbor Port: Ethernet51/1 - Port not found - Port: Ethernet52/1 Neighbor: dc1-leaf3 Neighbor Port: Ethernet52/1 - Port not found,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
-dc1-leaf4,VerifyReachability,failure,Destination 10.99.1.1 (dc1-leaf1) from 10.99.1.4 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.2 (dc1-leaf2) from 10.99.1.4 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.3 (dc1-leaf3) from 10.99.1.4 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.129 (dc1-spine1) from 10.99.1.4 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.130 (dc1-spine2) from 10.99.1.4 in VRF default - Packet loss detected - Transmitted: 1 Received: 0,Verifies VTEP fabric-wide underlay reachability.,Connectivity
-dc1-leaf4,VerifyReachability,failure,Destination 10.101.0.12 (dc1-spine1_Ethernet1/4) from 10.101.0.13 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.14 (dc1-spine2_Ethernet1/4) from 10.101.0.15 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address',Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
-dc1-leaf4,VerifyReachability,failure,"'ping vrf BLUE 10.101.254.0 size 100 repeat 1' failed on dc1-leaf4: VRF 'BLUE' is not active
-'ping vrf GREEN 10.101.254.0 size 100 repeat 1' failed on dc1-leaf4: VRF 'GREEN' is not active",Verifies reachability to BGP neighbors.,Connectivity
-dc1-leaf4,VerifyInterfaceErrDisabled,failure,Interface: Ethernet49/1 - Error disabled - Causes: mlagissu - Interface: Ethernet1 - Error disabled - Causes: mlagissu - Interface: Ethernet50/1 - Error disabled - Causes: mlagissu,Verifies there are no interfaces in the errdisabled state.,Interfaces
-dc1-leaf4,VerifyInterfacesStatus,failure,"Interface: Ethernet49/1 - Not configured - Interface: Ethernet50/1 - Not configured - Interface: Ethernet51/1 - Not configured - Interface: Ethernet52/1 - Not configured - Interface: Port-Channel511 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan100 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan200 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan3500 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan3501 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown - Interface: Vlan4093 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
-dc1-leaf4,VerifyPortChannels,failure,"Interface: Port-Channel511 - Inactive port(s) - Ethernet51/1, Ethernet52/1",Verifies there are no inactive ports in port channels.,Interfaces
-dc1-leaf4,VerifyMlagStatus,failure,MLAG negotiation status mismatch - Expected: connected Actual: connecting - Operational state of the MLAG peer link is not correct - Expected: up Actual: lowerLayerDown,Verifies the health status of the MLAG configuration.,MLAG
-dc1-leaf4,VerifyIPv4RoutePresencePerVRF,failure,Prefix: 10.99.1.1/32 VRF: default - Route not found - Prefix: 10.99.1.2/32 VRF: default - Route not found - Prefix: 10.99.1.3/32 VRF: default - Route not found - Prefix: 10.99.1.129/32 VRF: default - Route not found - Prefix: 10.99.1.130/32 VRF: default - Route not found - Prefix: 10.101.1.1/32 VRF: default - Route not found,Verifies that the provided IPv4 prefixes are present in the routing table.,Routing
-dc1-spine1,VerifyBGPPeerSession,failure,Peer: 10.99.1.1 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.2 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.3 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.4 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.1 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.5 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.9 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.13 VRF: default - Incorrect session state - Expected: Established Actual: Idle,Verifies the session state of BGP peers.,BGP
+dc1-leaf4,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
 dc1-spine1,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
 +++ system:/running-config
 @@ -1,4 +1,4 @@
@@ -89,11 +48,6 @@ dc1-spine1,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
  no aaa root
  !
 ",Verifies there is no difference between the running-config and the startup-config.,Configuration
-dc1-spine1,VerifyLLDPNeighbors,failure,Port: Ethernet1/1 Neighbor: dc1-leaf1 Neighbor Port: Ethernet49/1 - Port not found - Port: Ethernet1/2 Neighbor: dc1-leaf2 Neighbor Port: Ethernet49/1 - Port not found - Port: Ethernet1/3 Neighbor: dc1-leaf3 Neighbor Port: Ethernet49/1 - Port not found - Port: Ethernet1/4 Neighbor: dc1-leaf4 Neighbor Port: Ethernet49/1 - Port not found,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
-dc1-spine1,VerifyReachability,failure,Destination 10.101.0.1 (dc1-leaf1_Ethernet49/1) from 10.101.0.0 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.5 (dc1-leaf2_Ethernet49/1) from 10.101.0.4 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.9 (dc1-leaf3_Ethernet49/1) from 10.101.0.8 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.13 (dc1-leaf4_Ethernet49/1) from 10.101.0.12 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address',Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
-dc1-spine1,VerifyReachability,failure,Destination 10.99.1.1 (dc1-leaf1_Loopback0) from Loopback0 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.2 (dc1-leaf2_Loopback0) from Loopback0 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.3 (dc1-leaf3_Loopback0) from Loopback0 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.4 (dc1-leaf4_Loopback0) from Loopback0 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.101.0.1 (dc1-leaf1_Ethernet49/1) in VRF default - Unreachable - Destination 10.101.0.5 (dc1-leaf2_Ethernet49/1) in VRF default - Unreachable - Destination 10.101.0.9 (dc1-leaf3_Ethernet49/1) in VRF default - Unreachable - Destination 10.101.0.13 (dc1-leaf4_Ethernet49/1) in VRF default - Unreachable,Verifies reachability to BGP neighbors.,Connectivity
-dc1-spine1,VerifyInterfacesStatus,failure,Interface: Ethernet1/1 - Not configured - Interface: Ethernet1/2 - Not configured - Interface: Ethernet1/3 - Not configured - Interface: Ethernet1/4 - Not configured,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
-dc1-spine2,VerifyBGPPeerSession,failure,Peer: 10.99.1.1 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.2 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.3 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.4 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.3 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.7 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.11 VRF: default - Incorrect session state - Expected: Established Actual: Idle - Peer: 10.101.0.15 VRF: default - Incorrect session state - Expected: Established Actual: Idle,Verifies the session state of BGP peers.,BGP
 dc1-spine2,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
 +++ system:/running-config
 @@ -1,4 +1,4 @@
@@ -103,23 +57,21 @@ dc1-spine2,VerifyRunningConfigDiffs,failure,"--- flash:/startup-config
  no aaa root
  !
 ",Verifies there is no difference between the running-config and the startup-config.,Configuration
-dc1-spine2,VerifyLLDPNeighbors,failure,Port: Ethernet1/1 Neighbor: dc1-leaf1 Neighbor Port: Ethernet50/1 - Port not found - Port: Ethernet1/2 Neighbor: dc1-leaf2 Neighbor Port: Ethernet50/1 - Port not found - Port: Ethernet1/3 Neighbor: dc1-leaf3 Neighbor Port: Ethernet50/1 - Port not found - Port: Ethernet1/4 Neighbor: dc1-leaf4 Neighbor Port: Ethernet50/1 - Port not found,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
-dc1-spine2,VerifyReachability,failure,Destination 10.101.0.3 (dc1-leaf1_Ethernet50/1) from 10.101.0.2 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.7 (dc1-leaf2_Ethernet50/1) from 10.101.0.6 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.11 (dc1-leaf3_Ethernet50/1) from 10.101.0.10 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address' - Destination 10.101.0.15 (dc1-leaf4_Ethernet50/1) from 10.101.0.14 in VRF default - Error when executing ping: 'ping: bind: Cannot assign requested address',Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
-dc1-spine2,VerifyReachability,failure,Destination 10.99.1.1 (dc1-leaf1_Loopback0) from Loopback0 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.2 (dc1-leaf2_Loopback0) from Loopback0 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.3 (dc1-leaf3_Loopback0) from Loopback0 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.99.1.4 (dc1-leaf4_Loopback0) from Loopback0 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.101.0.3 (dc1-leaf1_Ethernet50/1) in VRF default - Unreachable - Destination 10.101.0.7 (dc1-leaf2_Ethernet50/1) in VRF default - Unreachable - Destination 10.101.0.11 (dc1-leaf3_Ethernet50/1) in VRF default - Unreachable - Destination 10.101.0.15 (dc1-leaf4_Ethernet50/1) in VRF default - Unreachable,Verifies reachability to BGP neighbors.,Connectivity
-dc1-spine2,VerifyInterfacesStatus,failure,Interface: Ethernet1/1 - Not configured - Interface: Ethernet1/2 - Not configured - Interface: Ethernet1/3 - Not configured - Interface: Ethernet1/4 - Not configured,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
-dc1-leaf1,VerifyMlagConfigSanity,skipped,MLAG is disabled,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
-dc1-leaf1,VerifyVxlanConfigSanity,skipped,'show vxlan config-sanity' is not supported on cEOSLab,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
-dc1-leaf2,VerifyMlagConfigSanity,skipped,MLAG is disabled,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
-dc1-leaf2,VerifyVxlanConfigSanity,skipped,'show vxlan config-sanity' is not supported on cEOSLab,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
-dc1-leaf3,VerifyMlagConfigSanity,skipped,MLAG is disabled,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
-dc1-leaf3,VerifyVxlanConfigSanity,skipped,'show vxlan config-sanity' is not supported on cEOSLab,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
-dc1-leaf4,VerifyMlagConfigSanity,skipped,MLAG is disabled,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
-dc1-leaf4,VerifyVxlanConfigSanity,skipped,'show vxlan config-sanity' is not supported on cEOSLab,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
+dc1-leaf1,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
 dc1-leaf1,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-leaf1,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-leaf1,VerifyReachability,success,,Verifies VTEP fabric-wide underlay reachability.,Connectivity
+dc1-leaf1,VerifyReachability,success,,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-leaf1,VerifyReachability,success,,Verifies reachability to BGP neighbors.,Connectivity
 dc1-leaf1,VerifyIllegalLACP,success,,Verifies there are no illegal LACP packets in port channels.,Interfaces
+dc1-leaf1,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
 dc1-leaf1,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
 dc1-leaf1,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
-dc1-leaf1,VerifyMlagInterfaces,success,,Verifies there are no inactive or active-partial MLAG ports.,MLAG
+dc1-leaf1,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-leaf1,VerifyPortChannels,success,,Verifies there are no inactive ports in port channels.,Interfaces
+dc1-leaf1,VerifyMlagConfigSanity,success,,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
+dc1-leaf1,VerifyMlagStatus,success,,Verifies the health status of the MLAG configuration.,MLAG
+dc1-leaf1,VerifyIPv4RoutePresencePerVRF,success,,Verifies that the provided IPv4 prefixes are present in the routing table.,Routing
 dc1-leaf1,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
 dc1-leaf1,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
 dc1-leaf1,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
@@ -128,11 +80,22 @@ dc1-leaf1,VerifyFileSystemUtilization,success,,Verifies that no partition is uti
 dc1-leaf1,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-leaf1,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
 dc1-leaf1,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-leaf1,VerifyVxlanConfigSanity,success,,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
+dc1-leaf2,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
 dc1-leaf2,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-leaf2,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-leaf2,VerifyReachability,success,,Verifies VTEP fabric-wide underlay reachability.,Connectivity
+dc1-leaf2,VerifyReachability,success,,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-leaf2,VerifyReachability,success,,Verifies reachability to BGP neighbors.,Connectivity
 dc1-leaf2,VerifyIllegalLACP,success,,Verifies there are no illegal LACP packets in port channels.,Interfaces
+dc1-leaf2,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
 dc1-leaf2,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
 dc1-leaf2,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
-dc1-leaf2,VerifyMlagInterfaces,success,,Verifies there are no inactive or active-partial MLAG ports.,MLAG
+dc1-leaf2,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-leaf2,VerifyPortChannels,success,,Verifies there are no inactive ports in port channels.,Interfaces
+dc1-leaf2,VerifyMlagConfigSanity,success,,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
+dc1-leaf2,VerifyMlagStatus,success,,Verifies the health status of the MLAG configuration.,MLAG
+dc1-leaf2,VerifyIPv4RoutePresencePerVRF,success,,Verifies that the provided IPv4 prefixes are present in the routing table.,Routing
 dc1-leaf2,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
 dc1-leaf2,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
 dc1-leaf2,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
@@ -141,11 +104,22 @@ dc1-leaf2,VerifyFileSystemUtilization,success,,Verifies that no partition is uti
 dc1-leaf2,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-leaf2,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
 dc1-leaf2,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-leaf2,VerifyVxlanConfigSanity,success,,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
+dc1-leaf3,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
 dc1-leaf3,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-leaf3,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-leaf3,VerifyReachability,success,,Verifies VTEP fabric-wide underlay reachability.,Connectivity
+dc1-leaf3,VerifyReachability,success,,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-leaf3,VerifyReachability,success,,Verifies reachability to BGP neighbors.,Connectivity
 dc1-leaf3,VerifyIllegalLACP,success,,Verifies there are no illegal LACP packets in port channels.,Interfaces
+dc1-leaf3,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
 dc1-leaf3,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
 dc1-leaf3,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
-dc1-leaf3,VerifyMlagInterfaces,success,,Verifies there are no inactive or active-partial MLAG ports.,MLAG
+dc1-leaf3,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-leaf3,VerifyPortChannels,success,,Verifies there are no inactive ports in port channels.,Interfaces
+dc1-leaf3,VerifyMlagConfigSanity,success,,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
+dc1-leaf3,VerifyMlagStatus,success,,Verifies the health status of the MLAG configuration.,MLAG
+dc1-leaf3,VerifyIPv4RoutePresencePerVRF,success,,Verifies that the provided IPv4 prefixes are present in the routing table.,Routing
 dc1-leaf3,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
 dc1-leaf3,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
 dc1-leaf3,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
@@ -154,11 +128,22 @@ dc1-leaf3,VerifyFileSystemUtilization,success,,Verifies that no partition is uti
 dc1-leaf3,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-leaf3,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
 dc1-leaf3,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-leaf3,VerifyVxlanConfigSanity,success,,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
+dc1-leaf4,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
 dc1-leaf4,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-leaf4,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-leaf4,VerifyReachability,success,,Verifies VTEP fabric-wide underlay reachability.,Connectivity
+dc1-leaf4,VerifyReachability,success,,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-leaf4,VerifyReachability,success,,Verifies reachability to BGP neighbors.,Connectivity
 dc1-leaf4,VerifyIllegalLACP,success,,Verifies there are no illegal LACP packets in port channels.,Interfaces
+dc1-leaf4,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
 dc1-leaf4,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
 dc1-leaf4,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
-dc1-leaf4,VerifyMlagInterfaces,success,,Verifies there are no inactive or active-partial MLAG ports.,MLAG
+dc1-leaf4,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-leaf4,VerifyPortChannels,success,,Verifies there are no inactive ports in port channels.,Interfaces
+dc1-leaf4,VerifyMlagConfigSanity,success,,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
+dc1-leaf4,VerifyMlagStatus,success,,Verifies the health status of the MLAG configuration.,MLAG
+dc1-leaf4,VerifyIPv4RoutePresencePerVRF,success,,Verifies that the provided IPv4 prefixes are present in the routing table.,Routing
 dc1-leaf4,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
 dc1-leaf4,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
 dc1-leaf4,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
@@ -167,10 +152,16 @@ dc1-leaf4,VerifyFileSystemUtilization,success,,Verifies that no partition is uti
 dc1-leaf4,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-leaf4,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
 dc1-leaf4,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-leaf4,VerifyVxlanConfigSanity,success,,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
+dc1-spine1,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
 dc1-spine1,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-spine1,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-spine1,VerifyReachability,success,,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-spine1,VerifyReachability,success,,Verifies reachability to BGP neighbors.,Connectivity
 dc1-spine1,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
 dc1-spine1,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
 dc1-spine1,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
+dc1-spine1,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-spine1,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
 dc1-spine1,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
 dc1-spine1,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
@@ -179,10 +170,15 @@ dc1-spine1,VerifyFileSystemUtilization,success,,Verifies that no partition is ut
 dc1-spine1,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-spine1,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
 dc1-spine1,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-spine2,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
 dc1-spine2,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-spine2,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-spine2,VerifyReachability,success,,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-spine2,VerifyReachability,success,,Verifies reachability to BGP neighbors.,Connectivity
 dc1-spine2,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
 dc1-spine2,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
 dc1-spine2,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
+dc1-spine2,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-spine2,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
 dc1-spine2,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
 dc1-spine2,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
