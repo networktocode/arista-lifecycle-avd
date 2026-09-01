@@ -1,23 +1,21 @@
 #!/usr/bin/env python3
-"""Make an AVD intended configuration safe to push at the containerlab twin.
+"""Make an AVD intended configuration safe to boot on the containerlab twin.
 
-``playbooks/deploy_twin_eapi.yml`` pushes the twin-mode intended configs with
-``arista.eos.eos_config`` and ``replace: config``. That module opens a
-configuration session, runs ``rollback clean-config``, loads the file, and
-commits, so whatever the file does not say is removed from the device. The
-intended configs describe *production's* management plane:
+``digital_twin/clab/build_twin_lab.py`` embeds each node's twin-mode intended
+configuration as an inline containerlab ``startup-config``, so the twin boots
+the file verbatim and whatever it says becomes the device's whole
+configuration. The intended configs describe *production's* management plane:
 
     interface Management1        static 192.168.0.x, VRF MGMT
     management api http-commands eAPI enabled in VRF MGMT only
     ip route vrf MGMT 0.0.0.0/0 192.168.0.1
     username cvpadmin ...        and no `admin` user
 
-The twin is a plain containerlab lab. Its nodes come up on the twin's own
-management bridge with a dynamically assigned address on Management1 in the
-DEFAULT VRF, eAPI listening in the default VRF, and containerlab's default
-``admin``/``admin`` credentials. Committing production's management plane onto
-the twin would therefore cut the eAPI session that is doing the committing and
-delete the account it authenticated with, in the same commit.
+The twin is a plain containerlab lab on its own management bridge with its own
+static addressing, and validation reaches it over eAPI in the default VRF with
+containerlab's conventional ``admin``/``admin`` credentials. Booting
+production's management plane would leave the twin unreachable on its bridge
+and without an account the pipeline can log in with.
 
 So the configuration is filtered before it is pushed: the management-plane
 stanzas are dropped and a small reachability tail is appended that keeps the
