@@ -18,9 +18,10 @@ The flow:
 3. Filter each node's twin-mode intended configuration through ``twin_config_filter``
    (management plane replaced with the twin's own static address and credentials) and
    embed it in the topology as an inline ``startup-config``.
-4. ``PUT /api/v1/labs/<lab>`` redeploys the lab in place: containerlab's native
-   destroy-and-deploy, same lab name and node names, so the Nautobot containerlab app's
-   pages keep working against the same objects.
+4. ``POST /api/v1/labs?reconfigure=true`` deploys the new topology over the existing
+   lab: same lab name and node names, so the Nautobot containerlab app's pages keep
+   working against the same objects. (``PUT`` redeploys the lab's stored topology file
+   and ignores a body, so it cannot carry new content.)
 5. Poll every cEOS node's eAPI until it answers, so the validate job that follows runs
    ANTA against a booted, converged fabric.
 
@@ -188,7 +189,7 @@ def main(argv=None):
     topology, addresses = build_topology(prod_topology, lab_name, suffix, configs, args.mgmt_network, args.mgmt_subnet)
 
     print(f"Redeploying lab {lab_name} with {len(configs)} startup configurations...")
-    api_request(args.api, token, f"/api/v1/labs/{lab_name}", method="PUT", body={"topologyContent": topology})
+    api_request(args.api, token, "/api/v1/labs?reconfigure=true", method="POST", body={"topologyContent": topology})
 
     ceos = sorted(
         addresses[name] for name, spec in prod_topology["topology"]["nodes"].items() if spec["kind"] == "ceos"
