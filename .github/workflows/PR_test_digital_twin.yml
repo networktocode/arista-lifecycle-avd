@@ -68,22 +68,16 @@ jobs:
         id: build-dc1
         if: steps.filter-dc1.outputs.workflows == 'true'
 
-      - name: Find the running DC1 digital twin
-        run: |
-          python3 digital_twin/clab/twin_inventory.py \
-            --api http://host.docker.internal:8080 \
-            --jwt-secret-env CLAB_JWT_SECRET \
-            --production dc1 \
-            --out twin_inventory.yml
-        id: twin-inventory-dc1
-        if: steps.filter-dc1.outputs.workflows == 'true'
-        env:
-          CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
-
-      - name: Deploy configuration to the DC1 digital twin
+      - name: Redeploy the digital twin with the pull request's configuration
+        # Startup configuration is applied ungated at boot, unlike runtime sessions,
+        # which cEOS-lab gates behind platform capabilities. The make target discovers
+        # the running twin through the API server, embeds the built configs as inline
+        # startup configs, redeploys the lab in place, and waits for every eAPI.
         run: make dc1-deploy-twin
         id: dc1-deploy
         if: steps.filter-dc1.outputs.workflows == 'true'
+        env:
+          CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
 
   Network-validation-digital-twin:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository && needs.deploy-digital-twin.outputs.output_dc1 == 'success' }}

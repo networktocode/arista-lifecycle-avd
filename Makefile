@@ -22,8 +22,10 @@ dc1-validate: ## Run ANTA against production DC1 (ANTA_USERNAME, ANTA_PASSWORD)
 dc1-validate_digital_twin_clab: ## Run ANTA against the clab digital twin
 	ansible-playbook playbooks/validate_digital_twin_clab.yml -i $(INVENTORY) --diff $(TARGET)
 
-dc1-deploy-twin: ## Replace the digital twin configs over eAPI, filtered for twin reachability (needs $(TWIN_INVENTORY) from twin_inventory.py)
-	ansible-playbook playbooks/deploy_twin_eapi.yml -i $(TWIN_INVENTORY)
+CLAB_API ?= http://host.docker.internal:8080
+
+dc1-deploy-twin: ## Redeploy the digital twin with the built configs as startup configs (needs CLAB_JWT_SECRET)
+	python3 digital_twin/clab/build_twin_lab.py --api $(CLAB_API) --jwt-secret-env CLAB_JWT_SECRET --production dc1 --topology digital_twin/clab/topology.clab.yml --configs sites/DC1/digital_twins/clab/intended/configs
 
 dc1-validate-twin: ## Run ANTA against the digital twin over eAPI (needs $(TWIN_INVENTORY) from twin_inventory.py)
 	ansible-playbook playbooks/validate_twin_eapi.yml -i $(TWIN_INVENTORY) --diff

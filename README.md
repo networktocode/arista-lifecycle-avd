@@ -72,20 +72,19 @@ The digital twin needs no credentials of its own: containerlab boots cEOS with `
 
 ### Deploying to the twin
 
-`playbooks/deploy_twin_eapi.yml` does not push the twin intended configs as rendered. `replace:
-config` opens a configuration session, runs `rollback clean-config`, loads the file, and commits, so
-the file's management plane becomes the device's. The intended configs describe production's:
-`interface Management1` renumbered to a static 192.168.0.x in VRF MGMT, eAPI listening in VRF MGMT
-only, a default route via 192.168.0.1, and no `admin` account. Committing that onto the twin would
-cut the eAPI session doing the committing and delete the credentials it authenticated with, in the
-same commit.
+`digital_twin/clab/build_twin_lab.py` does not push configuration at the running twin: cEOS-lab
+gates most routing configuration behind platform capabilities that never settle reliably for
+runtime sessions, while startup configuration is applied ungated at boot. So the deploy REDEPLOYS
+the running twin lab in place through the containerlab API server, with each node's built
+configuration embedded as an inline `startup-config`: same lab name, same node names, static twin
+management addresses that reuse each node's production last octet, and a boot wait until every
+node's eAPI answers.
 
-So the playbook renders each host's configuration through
-`digital_twin/clab/twin_config_filter.py` first, into a directory under `/tmp`. The filter drops
-the management-plane stanzas, plus `daemon TerminAttr` (the twin never has the CloudVision
-onboarding token the agent needs, so on the twin it could only restart in a loop), and appends a
-tail that restores `admin`/`admin`, `interface Management1` with the node's own twin address in the
-default VRF, and eAPI over https in the default VRF.
+Each configuration is first rendered through `digital_twin/clab/twin_config_filter.py`. The filter
+drops the management-plane stanzas, plus `daemon TerminAttr` (the twin never has the CloudVision
+onboarding token the agent needs, so on the twin it could only restart in a loop) and `sflow`
+(cEOS-lab rejects it), and appends a tail that restores `admin`/`admin`, `interface Management1`
+with the node's own twin address in the default VRF, and eAPI over https in the default VRF.
 `vrf instance MGMT` is deliberately kept: `mlag configuration`'s heartbeat peer address, the name
 servers, and the NTP servers all reference it, and an MGMT VRF with no interface in it cannot carry
 a session. Everything the pull request is validating - BGP, VLANs, VRFs, Ethernet interfaces, MLAG,
