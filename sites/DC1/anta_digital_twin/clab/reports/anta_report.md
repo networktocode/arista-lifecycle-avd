@@ -15,28 +15,28 @@
 
 | Total Tests | ✅&nbsp;Success | ⏭️&nbsp;Skipped | ❌&nbsp;Failure | ❗&nbsp;Error |
 | :- | :- | :- | :- | :- |
-| 140 | 130 | 0 | 10 | 0 |
+| 130 | 130 | 0 | 0 | 0 |
 
 ### 🔌 Summary Totals Device Under Test <a id="summary-totals-device-under-test"></a>
 
 | Device | Total Tests | ✅&nbsp;Success | ⏭️&nbsp;Skipped | ❌&nbsp;Failure | ❗&nbsp;Error | Categories Skipped | Categories Failed |
 | :- | :- | :- | :- | :- | :- | :- | :- |
-| **dc1-leaf1** | 26 | 24 | 0 | 2 | 0 | - | Configuration, MLAG |
-| **dc1-leaf2** | 26 | 24 | 0 | 2 | 0 | - | Configuration, MLAG |
-| **dc1-leaf3** | 26 | 24 | 0 | 2 | 0 | - | Configuration, MLAG |
-| **dc1-leaf4** | 26 | 24 | 0 | 2 | 0 | - | Configuration, MLAG |
-| **dc1-spine1** | 18 | 17 | 0 | 1 | 0 | - | Configuration |
-| **dc1-spine2** | 18 | 17 | 0 | 1 | 0 | - | Configuration |
+| **dc1-leaf1** | 24 | 24 | 0 | 0 | 0 | - | - |
+| **dc1-leaf2** | 24 | 24 | 0 | 0 | 0 | - | - |
+| **dc1-leaf3** | 24 | 24 | 0 | 0 | 0 | - | - |
+| **dc1-leaf4** | 24 | 24 | 0 | 0 | 0 | - | - |
+| **dc1-spine1** | 17 | 17 | 0 | 0 | 0 | - | - |
+| **dc1-spine2** | 17 | 17 | 0 | 0 | 0 | - | - |
 
 ### 🗂️ Summary Totals Per Category <a id="summary-totals-per-category"></a>
 
 | Test Category | Total Tests | ✅&nbsp;Success | ⏭️&nbsp;Skipped | ❌&nbsp;Failure | ❗&nbsp;Error |
 | :- | :- | :- | :- | :- | :- |
 | **BGP** | 6 | 6 | 0 | 0 | 0 |
-| **Configuration** | 12 | 6 | 0 | 6 | 0 |
+| **Configuration** | 6 | 6 | 0 | 0 | 0 |
 | **Connectivity** | 22 | 22 | 0 | 0 | 0 |
 | **Interfaces** | 32 | 32 | 0 | 0 | 0 |
-| **MLAG** | 12 | 8 | 0 | 4 | 0 |
+| **MLAG** | 8 | 8 | 0 | 0 | 0 |
 | **Routing** | 10 | 10 | 0 | 0 | 0 |
 | **STP** | 6 | 6 | 0 | 0 | 0 |
 | **System** | 36 | 36 | 0 | 0 | 0 |
@@ -46,16 +46,6 @@
 
 | Device | Categories | Test | Description | Result | Messages |
 | :- | :- | :- | :- | :- | :- |
-| dc1-leaf1 | Configuration | VerifyRunningConfigDiffs | Verifies there is no difference between the running-config and the startup-config. | ❌&nbsp;Failure | --- flash:/startup-config<br>+++ system:/running-config<br>@@ -1,4 +1,4 @@<br>-! device: dc1-leaf1.dc1.clab (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br>+! device: dc1-leaf1 (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br> !<br> no aaa root<br> !<br> |
-| dc1-leaf1 | MLAG | VerifyMlagInterfaces | Verifies there are no inactive or active-partial MLAG ports. | ❌&nbsp;Failure | MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0 |
-| dc1-leaf2 | Configuration | VerifyRunningConfigDiffs | Verifies there is no difference between the running-config and the startup-config. | ❌&nbsp;Failure | --- flash:/startup-config<br>+++ system:/running-config<br>@@ -1,4 +1,4 @@<br>-! device: dc1-leaf2.dc1.clab (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br>+! device: dc1-leaf2 (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br> !<br> no aaa root<br> !<br> |
-| dc1-leaf2 | MLAG | VerifyMlagInterfaces | Verifies there are no inactive or active-partial MLAG ports. | ❌&nbsp;Failure | MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0 |
-| dc1-leaf3 | Configuration | VerifyRunningConfigDiffs | Verifies there is no difference between the running-config and the startup-config. | ❌&nbsp;Failure | --- flash:/startup-config<br>+++ system:/running-config<br>@@ -1,4 +1,4 @@<br>-! device: dc1-leaf3.dc1.clab (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br>+! device: dc1-leaf3 (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br> !<br> no aaa root<br> !<br> |
-| dc1-leaf3 | MLAG | VerifyMlagInterfaces | Verifies there are no inactive or active-partial MLAG ports. | ❌&nbsp;Failure | MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0 |
-| dc1-leaf4 | Configuration | VerifyRunningConfigDiffs | Verifies there is no difference between the running-config and the startup-config. | ❌&nbsp;Failure | --- flash:/startup-config<br>+++ system:/running-config<br>@@ -1,4 +1,4 @@<br>-! device: dc1-leaf4.dc1.clab (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br>+! device: dc1-leaf4 (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br> !<br> no aaa root<br> !<br> |
-| dc1-leaf4 | MLAG | VerifyMlagInterfaces | Verifies there are no inactive or active-partial MLAG ports. | ❌&nbsp;Failure | MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0 |
-| dc1-spine1 | Configuration | VerifyRunningConfigDiffs | Verifies there is no difference between the running-config and the startup-config. | ❌&nbsp;Failure | --- flash:/startup-config<br>+++ system:/running-config<br>@@ -1,4 +1,4 @@<br>-! device: dc1-spine1.dc1.clab (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br>+! device: dc1-spine1 (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br> !<br> no aaa root<br> !<br> |
-| dc1-spine2 | Configuration | VerifyRunningConfigDiffs | Verifies there is no difference between the running-config and the startup-config. | ❌&nbsp;Failure | --- flash:/startup-config<br>+++ system:/running-config<br>@@ -1,4 +1,4 @@<br>-! device: dc1-spine2.dc1.clab (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br>+! device: dc1-spine2 (cEOSLab, EOS-4.33.10M-49734529.43310M (engineering build))<br> !<br> no aaa root<br> !<br> |
 | dc1-leaf1 | BGP | VerifyBGPPeerSession | Verifies the session state of BGP peers. | ✅&nbsp;Success | - |
 | dc1-leaf1 | Configuration | VerifyZeroTouch | Verifies ZeroTouch is disabled. | ✅&nbsp;Success | - |
 | dc1-leaf1 | Connectivity | VerifyLLDPNeighbors | Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors. | ✅&nbsp;Success | - |
