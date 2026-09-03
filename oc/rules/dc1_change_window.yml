@@ -1,0 +1,39 @@
+---
+bgp_session_state:
+  display_name: "BGP Session State"
+  rule_type: "exact_match"
+  description: "Every BGP neighbor stays established with a stable prefix count."
+  collectors:
+    - name: "textfsm"
+      platform: "arista_eos"
+      command: "show ip bgp summary"
+      jmespath: "[*].[$bgp_neigh$, state_pfxrcd]"
+interface_health:
+  display_name: "Interface Health"
+  rule_type: "exact_match"
+  description: "Interface admin and operational state are unchanged."
+  collectors:
+    - name: "napalm"
+      platform: "arista_eos"
+      napalm_getter: "get_interfaces"
+      jmespath: "*.{is_up: is_up, is_enabled: is_enabled}"
+mlag_state:
+  display_name: "MLAG State"
+  rule_type: "exact_match"
+  description: "The MLAG domain stays active with a healthy peer negotiation."
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show mlag | json"
+      jmespath: "{state: state, negStatus: negStatus}"
+route_count:
+  display_name: "Route Count"
+  rule_type: "tolerance"
+  description: "The routing table size stays within ten percent of the baseline."
+  evaluate_args:
+    tolerance: 10
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show ip route summary | json"
+      jmespath: "totalRoutes"

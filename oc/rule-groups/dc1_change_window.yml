@@ -1,0 +1,9 @@
+---
+dc1_change_window:
+  display_name: "DC1 Change Window"
+  description: "Steady-state checks taken before and after a DC1 production change."
+  validation_rules:
+    - "BGP Session State"
+    - "Interface Health"
+    - "MLAG State"
+    - "Route Count"
