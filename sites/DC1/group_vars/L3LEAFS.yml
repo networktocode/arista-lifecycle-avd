@@ -22,7 +22,7 @@ l3leaf:
     - group: DC1_LEAF1
       bgp_as: 65101
       filter:
-        tenants: &id001
+        tenants:
           - BLUE
           - GREEN
         tags:
@@ -43,7 +43,9 @@ l3leaf:
     - group: DC1_LEAF2
       bgp_as: 65102
       filter:
-        tenants: *id001
+        tenants:
+          - BLUE
+          - GREEN
         tags:
           - DC1
       nodes:
