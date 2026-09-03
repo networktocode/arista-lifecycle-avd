@@ -1,0 +1,14 @@
+---
+type: l3spine
+l3spine:
+  defaults:
+    platform: 720XP
+  node_groups:
+    - group: BR1_CORE
+      nodes:
+        - name: br1-core1
+          id: 1
+          mgmt_ip: 192.168.0.20/24
+        - name: br1-core2
+          id: 2
+          mgmt_ip: 192.168.0.21/24
