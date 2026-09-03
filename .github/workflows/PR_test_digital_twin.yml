@@ -63,11 +63,6 @@ jobs:
               - 'sites/DC1/group_vars/**'
               - 'sites/_global_vars/**'
 
-      - name: Build configuration for the DC1 fabric
-        run: make dc1-build
-        id: build-dc1
-        if: steps.filter-dc1.outputs.workflows == 'true'
-
       - name: Check site paths for AVD variable changes
         uses: dorny/paths-filter@v4
         id: filter-sites
