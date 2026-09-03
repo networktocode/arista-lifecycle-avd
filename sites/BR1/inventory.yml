@@ -1,0 +1,15 @@
+---
+all:
+  children:
+    BR1:
+      children:
+        L3SPINES:
+          hosts:
+            br1-core1:
+              ansible_host: 192.168.0.20
+            br1-core2:
+              ansible_host: 192.168.0.21
+        L2LEAFS:
+          hosts:
+            br1-access1:
+              ansible_host: 192.168.0.22

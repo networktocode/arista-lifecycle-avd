@@ -1,0 +1,24 @@
+---
+type: l3spine
+l3spine:
+  defaults:
+    platform: 720XP
+    loopback_ipv4_pool: 10.99.2.0/27
+    mlag_peer_ipv4_pool: 10.101.253.0/31
+    mlag_peer_l3_ipv4_pool: 10.101.252.0/31
+    mlag_interfaces:
+      - Ethernet51
+      - Ethernet52
+  node_groups:
+    - group: BR1_CORE
+      filter:
+        tenants: []
+        tags:
+          - BR1
+      nodes:
+        - name: br1-core1
+          id: 1
+          mgmt_ip: 192.168.0.20/24
+        - name: br1-core2
+          id: 2
+          mgmt_ip: 192.168.0.21/24

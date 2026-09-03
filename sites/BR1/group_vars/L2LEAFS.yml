@@ -1,0 +1,20 @@
+---
+type: l2leaf
+l2leaf:
+  defaults:
+    platform: 720XP
+  node_groups:
+    - group: BR1_ACCESS
+      nodes:
+        - name: br1-access1
+          id: 1
+          mgmt_ip: 192.168.0.22/24
+          uplink_switches:
+            - br1-core1
+            - br1-core2
+          uplink_interfaces:
+            - Ethernet49
+            - Ethernet50
+          uplink_switch_interfaces:
+            - Ethernet49
+            - Ethernet49
