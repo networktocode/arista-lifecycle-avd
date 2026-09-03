@@ -18,7 +18,7 @@ aaa_settings:
     - name: anta
       privilege: 15
       role: network-admin
-      sha512_password: "$6$Z0XaFLSxWMm4tzgB$8AVlUHDNhTGoFsJcqKNIVAaBKCwnIESVU0bwi0ONYwf8PWm5OUsXy3RqGGMwWvsedzcGqEZ590.2g7wRfe.4z."
+      sha512_password: "$6$.3qIYjZCvHNrYaLk$tHqHlmKwgFUDg.ooiJnL8qzl6ylDdcoYmgKyFmpaU/x6nivjpz5fzx1q6Y20NiXK2062bV9kjihB74FtWXqPi1"
   authorization:
     exec:
       default: local
