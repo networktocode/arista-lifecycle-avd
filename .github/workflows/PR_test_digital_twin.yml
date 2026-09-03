@@ -68,6 +68,25 @@ jobs:
         id: build-dc1
         if: steps.filter-dc1.outputs.workflows == 'true'
 
+      - name: Check site paths for AVD variable changes
+        uses: dorny/paths-filter@v4
+        id: filter-sites
+        with:
+          filters: |
+            workflows:
+              - 'sites/*/group_vars/**'
+              - 'sites/*/inventory.yml'
+              - 'sites/_global_vars/**'
+
+      - name: Build configuration for every site
+        run: |
+          for inventory in sites/*/inventory.yml; do
+            site="$(basename "$(dirname "$inventory")")"
+            make build SITE="$site"
+          done
+        id: build-sites
+        if: steps.filter-sites.outputs.workflows == 'true'
+
       - name: Redeploy the digital twin with the pull request's configuration
         # Startup configuration is applied ungated at boot, unlike runtime sessions,
         # which cEOS-lab gates behind platform capabilities. The make target discovers
@@ -75,7 +94,7 @@ jobs:
         # startup configs, redeploys the lab in place, and waits for every eAPI.
         run: make dc1-deploy-twin
         id: dc1-deploy
-        if: steps.filter-dc1.outputs.workflows == 'true'
+        if: steps.filter-dc1.outputs.workflows == 'true' && steps.build-sites.outcome == 'success'
         env:
           CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
 

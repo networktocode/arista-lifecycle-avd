@@ -34,19 +34,24 @@ jobs:
       - name: add the repo to git safe directory
         run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
 
-      - name: Check DC1 paths for AVD variable changes
+      - name: Check site paths for AVD variable changes
         uses: dorny/paths-filter@v4
-        id: filter-dc1
+        id: filter-sites
         with:
           filters: |
             workflows:
-              - 'sites/DC1/group_vars/**'
+              - 'sites/*/group_vars/**'
+              - 'sites/*/inventory.yml'
               - 'sites/_global_vars/**'
 
-      - name: Build configuration for the DC1 fabric
-        run: make dc1-build
-        id: build-dc1
-        if: steps.filter-dc1.outputs.workflows == 'true'
+      - name: Build configuration for every site
+        run: |
+          for inventory in sites/*/inventory.yml; do
+            site="$(basename "$(dirname "$inventory")")"
+            make build SITE="$site"
+          done
+        id: build-sites
+        if: steps.filter-sites.outputs.workflows == 'true'
 
       - name: commit the changes if the build changed files
         run: |
@@ -63,4 +68,4 @@ jobs:
         shell: bash
         env:
           BRANCH: ${{ github.ref_name }}
-        if: steps.filter-dc1.outputs.workflows == 'true'
+        if: steps.filter-sites.outputs.workflows == 'true'
