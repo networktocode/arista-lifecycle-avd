@@ -71,7 +71,9 @@ custom_platform_settings:
       transceiver_adapter:
         detection: false
         recovery: false
-  management_interface: Management0
+  # The lab's interface mapping gives every device Management1; the R-series default of
+  # Management0 configured an interface that does not exist and cut CloudVision streaming.
+  management_interface: Management1
   digital_twin:
     platform: vEOS-lab
 # Reuse the same IP for MLAG L2 and L3 peering
