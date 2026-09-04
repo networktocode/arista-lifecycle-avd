@@ -213,7 +213,7 @@ class TwinInventoryTest(unittest.TestCase):
             code, _stdout, stderr = run_script(stub.url, self.out)
         self.assertEqual(code, 2)
         self.assertIn(
-            "no digital twin lab is running; launch Create & Deploy Digital Twin for DC1 first",
+            "no digital twin lab is running; run Nautobot's Deploy Twin & Publish PR job for DC1 first",
             stderr,
         )
         self.assertFalse(os.path.exists(self.out), "no inventory should be written without a twin")

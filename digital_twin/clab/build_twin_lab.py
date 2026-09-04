@@ -47,7 +47,7 @@ from twin_inventory import mint_token
 TWIN_CREDENTIALS = ("admin", "admin")
 INTF_MAPPING_BIND = "/opt/clab/labs/EosIntfMapping.json:/mnt/flash/EosIntfMapping.json:ro"
 
-NO_TWIN_MESSAGE = "no digital twin lab is running; launch Create & Deploy Digital Twin for DC1 first"
+NO_TWIN_MESSAGE = "no digital twin lab is running; run Nautobot's Deploy Twin & Publish PR job for DC1 first"
 
 
 def api_request(api, token, path, method="GET", body=None, timeout=600):

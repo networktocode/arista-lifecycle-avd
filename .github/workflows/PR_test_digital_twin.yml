@@ -3,7 +3,7 @@
 # DC1 before the change is allowed near production.
 #
 # Prerequisite: a digital twin lab must already be running on the containerlab
-# host (Nautobot's "Create & Deploy Digital Twin" job for DC1 starts one).
+# host (Nautobot's "Deploy Twin & Publish PR" job for DC1 starts one).
 # digital_twin/clab/twin_inventory.py asks the containerlab API server which
 # labs are up and exits 2 when the only lab is production, which fails this
 # workflow fast with a message saying what to launch.

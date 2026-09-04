@@ -70,7 +70,7 @@ GROUP_VARS = (
 # hosts in the topology, not switches, so they are left out of the inventory.
 DEFAULT_SKIP_GLOB = "dc1-host*"
 
-NO_TWIN_MESSAGE = "no digital twin lab is running; launch Create & Deploy Digital Twin for DC1 first"
+NO_TWIN_MESSAGE = "no digital twin lab is running; run Nautobot's Deploy Twin & Publish PR job for DC1 first"
 
 
 class TwinError(Exception):
@@ -385,7 +385,7 @@ def build_hosts(lab_name, containers, skip_glob):
             )
         raise TwinError(
             "the digital twin lab '{lab}' has no switch containers; check the twin topology that "
-            "Create & Deploy Digital Twin for DC1 rendered".format(lab=lab_name)
+            "the Deploy Twin & Publish PR job rendered".format(lab=lab_name)
         )
     return sorted(hosts.items())
 
