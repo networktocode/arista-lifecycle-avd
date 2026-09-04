@@ -100,7 +100,7 @@ local_users:
 - name: anta
   privilege: 15
   role: network-admin
-  sha512_password: $6$Z0XaFLSxWMm4tzgB$8AVlUHDNhTGoFsJcqKNIVAaBKCwnIESVU0bwi0ONYwf8PWm5OUsXy3RqGGMwWvsedzcGqEZ590.2g7wRfe.4z.
+  sha512_password: $6$.3qIYjZCvHNrYaLk$tHqHlmKwgFUDg.ooiJnL8qzl6ylDdcoYmgKyFmpaU/x6nivjpz5fzx1q6Y20NiXK2062bV9kjihB74FtWXqPi1
 - name: cvpadmin
   privilege: 15
   role: network-admin
@@ -331,6 +331,16 @@ router_bgp:
       - 10200:10200
     redistribute_routes:
     - learned
+  - id: 300
+    metadata:
+      tenants:
+      - RED
+    rd: 10.99.1.4:10300
+    route_targets:
+      both:
+      - 10300:10300
+    redistribute_routes:
+    - learned
   address_family_evpn:
     peer_groups:
     - name: EVPN-OVERLAY-PEERS
@@ -382,6 +392,28 @@ router_bgp:
     - ip_address: 10.101.254.0
       peer_group: MLAG-IPv4-UNDERLAY-PEER
       description: dc1-leaf3_Vlan3501
+      metadata:
+        validate_state: true
+    redistribute:
+      connected:
+        enabled: true
+        route_map: RM-CONN-2-BGP-VRFS
+  - name: RED
+    rd: 10.99.1.4:503
+    route_targets:
+      import:
+      - address_family: evpn
+        route_targets:
+        - 503:503
+      export:
+      - address_family: evpn
+        route_targets:
+        - 503:503
+    router_id: 10.99.1.4
+    neighbors:
+    - ip_address: 10.101.254.0
+      peer_group: MLAG-IPv4-UNDERLAY-PEER
+      description: dc1-leaf3_Vlan3502
       metadata:
         validate_state: true
     redistribute:
@@ -460,6 +492,26 @@ vlan_interfaces:
     tenants:
     - GREEN
     type: underlay_peering
+- name: Vlan300
+  description: RED_VLAN_300
+  shutdown: false
+  vrf: RED
+  ip_address_virtual: 10.10.30.1/24
+  metadata:
+    tenants:
+    - RED
+    tags:
+    - DC1
+- name: Vlan3502
+  description: MLAG_L3_VRF_RED
+  shutdown: false
+  vrf: RED
+  ip_address: 10.101.254.1/31
+  mtu: 1500
+  metadata:
+    tenants:
+    - RED
+    type: underlay_peering
 vlan_internal_order:
   allocation: ascending
   range:
@@ -504,6 +556,18 @@ vlans:
   metadata:
     tenants:
     - GREEN
+- id: 300
+  name: RED_VLAN_300
+  metadata:
+    tenants:
+    - RED
+- id: 3502
+  name: MLAG_L3_VRF_RED
+  trunk_groups:
+  - MLAG
+  metadata:
+    tenants:
+    - RED
 vrfs:
 - name: MGMT
   ip_routing: false
@@ -517,6 +581,11 @@ vrfs:
   metadata:
     tenants:
     - GREEN
+- name: RED
+  ip_routing: true
+  metadata:
+    tenants:
+    - RED
 vxlan_interface:
   vxlan1:
     description: dc1-leaf4_VTEP
@@ -529,8 +598,12 @@ vxlan_interface:
         vni: 10100
       - id: 200
         vni: 10200
+      - id: 300
+        vni: 10300
       vrfs:
       - name: BLUE
         vni: 501
       - name: GREEN
         vni: 502
+      - name: RED
+        vni: 503
