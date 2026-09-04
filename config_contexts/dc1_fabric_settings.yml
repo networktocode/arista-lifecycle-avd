@@ -16,6 +16,64 @@ default_interfaces:
     uplink_interfaces: [Ethernet49/1, Ethernet50/1]
     mlag_interfaces: [Ethernet51/1, Ethernet52/1]
     downlink_interfaces: [Ethernet53/1, Ethernet54/1]
+# cEOS-lab has no R-series TCAM, and CloudVision validates configs against the running
+# device, so the spines' platform entry is AVD's full 7500R3 default minus tcam_profile.
+custom_platform_settings:
+- platforms:
+  - 7500R3
+  reload_delay:
+    mlag: 900
+    non_mlag: 1020
+  feature_support:
+    subinterface_monitor_session: false
+    per_interface_l2_mtu: false
+    evpn_gateway_all_active_multihoming: true
+    evpn_gateway_rd_rt_rewrite: true
+    private_vlan: false
+    errdisable_causes:
+      acl:
+        recovery: false
+      dot1x_coa:
+        detection: false
+        recovery: false
+      dot1x_phone_classification:
+        detection: false
+        recovery: false
+      error_correction_encoding:
+        detection: false
+        recovery: false
+      fabric_capacity_low:
+        detection: false
+        recovery: false
+      hardware_speed_group:
+        detection: false
+        recovery: false
+      interface_speed:
+        detection: false
+        recovery: false
+      internal_error:
+        detection: false
+        recovery: false
+      port_breakout:
+        detection: false
+        recovery: false
+      storm_control:
+        detection: false
+        recovery: false
+      stuck_queue:
+        recovery: false
+      switchcard_unreachable:
+        detection: false
+        recovery: false
+      tpid:
+        detection: false
+        recovery: false
+      transceiver_adapter:
+        detection: false
+        recovery: false
+  management_interface: Management0
+  digital_twin:
+    platform: vEOS-lab
 # Reuse the same IP for MLAG L2 and L3 peering
 fabric_ip_addressing:
   mlag:
