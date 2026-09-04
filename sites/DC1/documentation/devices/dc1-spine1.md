@@ -17,8 +17,6 @@
 - [Monitoring](#monitoring)
   - [TerminAttr Daemon](#terminattr-daemon)
   - [SFlow](#sflow)
-- [Hardware TCAM Profile](#hardware-tcam-profile)
-  - [Hardware TCAM Device Configuration](#hardware-tcam-device-configuration)
 - [Spanning Tree](#spanning-tree)
   - [Spanning Tree Summary](#spanning-tree-summary)
   - [Spanning Tree Device Configuration](#spanning-tree-device-configuration)
@@ -266,18 +264,6 @@ sflow polling-interval 50
 sflow destination 127.0.0.1 6343
 sflow source-interface Loopback0
 sflow run
-```
-
-## Hardware TCAM Profile
-
-TCAM profile **`vxlan-routing`** is active
-
-### Hardware TCAM Device Configuration
-
-```eos
-!
-hardware tcam
-   system profile vxlan-routing
 ```
 
 ## Spanning Tree
