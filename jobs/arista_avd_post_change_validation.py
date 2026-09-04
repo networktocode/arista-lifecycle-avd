@@ -27,7 +27,7 @@ name = "AVD Compliance"  # module-level `name` = job grouping shown in the Nauto
 DEVICE_TAG = "avd"                          # devices of the AVD fabric
 REPORT_TEMPLATE_NAME = "AVD Change Report"  # installed by the "Load AVD Change Report" job
 # Absolute rules that legitimately FAIL on the NTC lab (documented in oc/README.md); excluded from the failure count.
-EXPECTED_LAB_FAILURES = {"NTP Synchronised"}
+EXPECTED_LAB_FAILURES = {"NTP Synchronised", "Interface Discards"}
 
 
 def result_rows(job_results):

@@ -44,7 +44,9 @@ SpecificIPSecConn, Reachability (not generated for this design).
 - `MLAG Status Active`, `MLAG Interfaces`, `MLAG Config Sanity`, `VXLAN Config Sanity` also run on the spines, which
   report MLAG/VXLAN as disabled/empty and pass.
 - Expected FAIL on the healthy NTC lab: `NTP Synchronised` on every device (no NTP reachability; the twin playbook skips
-  `VerifyNTP` for the same reason). `MLAG Interfaces` passes since the lab gained a real LACP host (their twin skips
+  `VerifyNTP` for the same reason), and `Interface Discards` on every device: cEOS-lab's `Management1` accumulates a few
+  `inDiscards` from broadcast noise on the containerlab management bridge (verified on the NTC fabric, EOS 4.33.10M:
+  every other interface counts zero). `MLAG Interfaces` passes since the lab gained a real LACP host (their twin skips
   `VerifyMlagInterfaces` because its host image has no LACP).
 
 ## Rule audit (2026-09-04)
