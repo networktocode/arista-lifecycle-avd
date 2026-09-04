@@ -351,8 +351,10 @@ vlan internal order ascending range 1006 1199
 | ------- | ---- | ------------ |
 | 100 | BLUE_VLAN_100 | - |
 | 200 | GREEN_VLAN_200 | - |
+| 300 | RED_VLAN_300 | - |
 | 3500 | MLAG_L3_VRF_BLUE | MLAG |
 | 3501 | MLAG_L3_VRF_GREEN | MLAG |
+| 3502 | MLAG_L3_VRF_RED | MLAG |
 | 4093 | MLAG_L3 | MLAG |
 | 4094 | MLAG | MLAG |
 
@@ -366,12 +368,19 @@ vlan 100
 vlan 200
    name GREEN_VLAN_200
 !
+vlan 300
+   name RED_VLAN_300
+!
 vlan 3500
    name MLAG_L3_VRF_BLUE
    trunk group MLAG
 !
 vlan 3501
    name MLAG_L3_VRF_GREEN
+   trunk group MLAG
+!
+vlan 3502
+   name MLAG_L3_VRF_RED
    trunk group MLAG
 !
 vlan 4093
@@ -516,8 +525,10 @@ interface Loopback1
 | --------- | ----------- | --- | --- | -------- |
 | Vlan100 | BLUE_VLAN_100 | BLUE | - | False |
 | Vlan200 | GREEN_VLAN_200 | GREEN | - | False |
+| Vlan300 | RED_VLAN_300 | RED | - | False |
 | Vlan3500 | MLAG_L3_VRF_BLUE | BLUE | 9214 | False |
 | Vlan3501 | MLAG_L3_VRF_GREEN | GREEN | 9214 | False |
+| Vlan3502 | MLAG_L3_VRF_RED | RED | 9214 | False |
 | Vlan4093 | MLAG_L3 | default | 9214 | False |
 | Vlan4094 | MLAG | default | 9214 | False |
 
@@ -527,8 +538,10 @@ interface Loopback1
 | --------- | --- | ---------- | ------------------ | ------------------------- | ------ | ------- |
 | Vlan100 | BLUE | - | 10.10.100.1/24 | - | - | - |
 | Vlan200 | GREEN | - | 10.10.200.1/24 | - | - | - |
+| Vlan300 | RED | - | 10.10.30.1/24 | - | - | - |
 | Vlan3500 | BLUE | 10.101.254.0/31 | - | - | - | - |
 | Vlan3501 | GREEN | 10.101.254.0/31 | - | - | - | - |
+| Vlan3502 | RED | 10.101.254.0/31 | - | - | - | - |
 | Vlan4093 | default | 10.101.254.0/31 | - | - | - | - |
 | Vlan4094 | default | 10.101.255.0/31 | - | - | - | - |
 
@@ -548,6 +561,12 @@ interface Vlan200
    vrf GREEN
    ip address virtual 10.10.200.1/24
 !
+interface Vlan300
+   description RED_VLAN_300
+   no shutdown
+   vrf RED
+   ip address virtual 10.10.30.1/24
+!
 interface Vlan3500
    description MLAG_L3_VRF_BLUE
    no shutdown
@@ -560,6 +579,13 @@ interface Vlan3501
    no shutdown
    mtu 9214
    vrf GREEN
+   ip address 10.101.254.0/31
+!
+interface Vlan3502
+   description MLAG_L3_VRF_RED
+   no shutdown
+   mtu 9214
+   vrf RED
    ip address 10.101.254.0/31
 !
 interface Vlan4093
@@ -592,6 +618,7 @@ interface Vlan4094
 | ---- | --- | ---------- | --------------- |
 | 100 | 10100 | - | - |
 | 200 | 10200 | - | - |
+| 300 | 10300 | - | - |
 
 ##### VRF to VNI and Multicast Group Mappings
 
@@ -599,6 +626,7 @@ interface Vlan4094
 | --- | --- | ----------------------------------------- |
 | BLUE | 501 | - |
 | GREEN | 502 | - |
+| RED | 503 | - |
 
 #### VXLAN Interface Device Configuration
 
@@ -611,8 +639,10 @@ interface Vxlan1
    vxlan udp-port 4789
    vxlan vlan 100 vni 10100
    vxlan vlan 200 vni 10200
+   vxlan vlan 300 vni 10300
    vxlan vrf BLUE vni 501
    vxlan vrf GREEN vni 502
+   vxlan vrf RED vni 503
 ```
 
 ## Routing
@@ -649,6 +679,7 @@ ip virtual-router mac-address 00:1c:73:00:00:99
 | BLUE | True |
 | GREEN | True |
 | MGMT | False |
+| RED | True |
 
 #### IP Routing Device Configuration
 
@@ -658,6 +689,7 @@ ip routing
 ip routing vrf BLUE
 ip routing vrf GREEN
 no ip routing vrf MGMT
+ip routing vrf RED
 ```
 
 ### IPv6 Routing
@@ -670,6 +702,7 @@ no ip routing vrf MGMT
 | BLUE | false |
 | GREEN | false |
 | MGMT | false |
+| RED | false |
 
 ### Router BGP
 
@@ -732,6 +765,7 @@ ASN Notation: asplain
 | 10.101.254.1 | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | default | - | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | - | - | - | - | - | - |
 | 10.101.254.1 | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | BLUE | - | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | - | - | - | - | - | - |
 | 10.101.254.1 | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | GREEN | - | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | - | - | - | - | - | - |
+| 10.101.254.1 | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | RED | - | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | Inherited from peer group MLAG-IPv4-UNDERLAY-PEER | - | - | - | - | - | - |
 
 #### Router BGP EVPN Address Family
 
@@ -747,6 +781,7 @@ ASN Notation: asplain
 | ---- | ------------------- | ----------------- | ------------------- | ------------------- | ------------ |
 | 100 | 10.99.1.3:10100 | 10100:10100 | - | - | learned |
 | 200 | 10.99.1.3:10200 | 10200:10200 | - | - | learned |
+| 300 | 10.99.1.3:10300 | 10300:10300 | - | - | learned |
 
 #### Router BGP VRFs
 
@@ -754,6 +789,7 @@ ASN Notation: asplain
 | --- | ------------------- | ------------ | ---------------- |
 | BLUE | 10.99.1.3:501 | connected | - |
 | GREEN | 10.99.1.3:502 | connected | - |
+| RED | 10.99.1.3:503 | connected | - |
 
 #### Router BGP Device Configuration
 
@@ -812,6 +848,11 @@ router bgp 65102
       route-target both 10200:10200
       redistribute learned
    !
+   vlan 300
+      rd 10.99.1.3:10300
+      route-target both 10300:10300
+      redistribute learned
+   !
    address-family evpn
       neighbor EVPN-OVERLAY-PEERS activate
    !
@@ -838,6 +879,16 @@ router bgp 65102
       update wait-install
       neighbor 10.101.254.1 peer group MLAG-IPv4-UNDERLAY-PEER
       neighbor 10.101.254.1 description dc1-leaf4_Vlan3501
+      redistribute connected route-map RM-CONN-2-BGP-VRFS
+   !
+   vrf RED
+      rd 10.99.1.3:503
+      route-target import evpn 503:503
+      route-target export evpn 503:503
+      router-id 10.99.1.3
+      update wait-install
+      neighbor 10.101.254.1 peer group MLAG-IPv4-UNDERLAY-PEER
+      neighbor 10.101.254.1 description dc1-leaf4_Vlan3502
       redistribute connected route-map RM-CONN-2-BGP-VRFS
 ```
 
@@ -954,6 +1005,7 @@ route-map RM-MLAG-PEER-IN permit 10
 | BLUE | enabled |
 | GREEN | enabled |
 | MGMT | disabled |
+| RED | enabled |
 
 ### VRF Instances Device Configuration
 
@@ -964,4 +1016,6 @@ vrf instance BLUE
 vrf instance GREEN
 !
 vrf instance MGMT
+!
+vrf instance RED
 ```

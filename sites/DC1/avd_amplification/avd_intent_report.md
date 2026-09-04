@@ -4,7 +4,7 @@
 
 | | | | | |
 |:---:|:---:|:---:|:---:|:---:|
-| <h2>177</h2> | | <h2>1,590</h2> | | <h2>9x</h2> |
+| <h2>181</h2> | | <h2>1,750</h2> | | <h2>10x</h2> |
 | **Lines of Input** | &xrarr; | **Lines of Config** | = | **Amplification** |
 
 </div>
@@ -16,16 +16,16 @@
 
 ### Data Model Input
 
-*177 total lines*
+*181 total lines*
 
 | File | Lines |
 |------|------:|
 | **`sites/_global_vars/`** | **99** |
 | &nbsp;&nbsp;&nbsp;&nbsp;`fabric_settings.yml` | 37 |
 | &nbsp;&nbsp;&nbsp;&nbsp;`management.yml` | 62 |
-| **`sites/DC1/group_vars/`** | **78** |
+| **`sites/DC1/group_vars/`** | **82** |
 | &nbsp;&nbsp;&nbsp;&nbsp;`DC1.yml` | 3 |
-| &nbsp;&nbsp;&nbsp;&nbsp;`L3LEAFS.yml` | 61 |
+| &nbsp;&nbsp;&nbsp;&nbsp;`L3LEAFS.yml` | 65 |
 | &nbsp;&nbsp;&nbsp;&nbsp;`SPINES.yml` | 14 |
 
 
@@ -34,15 +34,15 @@
 
 ### Configuration Output
 
-*1,590 total lines*
+*1,750 total lines*
 
 | File | Lines |
 |------|------:|
-| **`sites/DC1/intended/configs/`** | **1,590** |
-| &nbsp;&nbsp;&nbsp;&nbsp;`dc1-leaf1.cfg` | 314 |
-| &nbsp;&nbsp;&nbsp;&nbsp;`dc1-leaf2.cfg` | 314 |
-| &nbsp;&nbsp;&nbsp;&nbsp;`dc1-leaf3.cfg` | 314 |
-| &nbsp;&nbsp;&nbsp;&nbsp;`dc1-leaf4.cfg` | 314 |
+| **`sites/DC1/intended/configs/`** | **1,750** |
+| &nbsp;&nbsp;&nbsp;&nbsp;`dc1-leaf1.cfg` | 354 |
+| &nbsp;&nbsp;&nbsp;&nbsp;`dc1-leaf2.cfg` | 354 |
+| &nbsp;&nbsp;&nbsp;&nbsp;`dc1-leaf3.cfg` | 354 |
+| &nbsp;&nbsp;&nbsp;&nbsp;`dc1-leaf4.cfg` | 354 |
 | &nbsp;&nbsp;&nbsp;&nbsp;`dc1-spine1.cfg` | 167 |
 | &nbsp;&nbsp;&nbsp;&nbsp;`dc1-spine2.cfg` | 167 |
 
