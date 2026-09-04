@@ -1,0 +1,132 @@
+{#- Turn a jdiff diff into sentences. Leaves: {new_value, old_value} -> "was X, now Y"; "new"/"missing" -> added/removed. -#}
+{% macro humanize(node, path='') -%}
+{%- if node is mapping -%}
+{%- if 'new_value' in node and 'old_value' in node -%}
+- `{{ path }}`: was **{{ node.old_value }}**, now **{{ node.new_value }}**
+{% elif 'error' in node and node | length == 1 -%}
+- evaluation error: {{ node.error }}
+{% else -%}
+{%- for k, v in node.items() if k not in ('new_value', 'old_value') -%}
+{{ humanize(v, (path ~ '.' ~ k) if path else k) }}
+{%- endfor -%}
+{%- endif -%}
+{%- elif node == 'new' -%}
+- `{{ path }}`: **added** since the before snapshot
+{% elif node == 'missing' -%}
+- `{{ path }}`: **removed** since the before snapshot
+{% elif node is iterable and node is not string -%}
+{%- for item in node %}{{ humanize(item, path) }}{% endfor -%}
+{%- else -%}
+- `{{ path }}`: {{ node }}
+{% endif -%}
+{%- endmacro %}
+{% if results is none %}
+> ⚠️ **Data source unavailable.** The Operational Compliance results saved view could not be loaded.
+{% else -%}
+{% set scoped = results.filter(post__device__tags__name='avd', date__gte=reporting_period_start_date) %}
+{% set latest = scoped.filter(pre__isnull=False).order_by('-date').first() %}
+{% if not latest %}
+There is no before/after comparison in the reporting period, so there is nothing to analyse.
+{% else -%}
+{% set pre = latest.pre.snapshot %}{% set post = latest.post.snapshot %}
+{% set two = results.filter(job=latest.job).select_related('post__device', 'post__validation_rule') | list %}
+{% set before = results.filter(post__snapshot=pre, pre__isnull=True).select_related('post__device', 'post__validation_rule') | list %}
+{% set after = results.filter(post__snapshot=post, pre__isnull=True).select_related('post__device', 'post__validation_rule') | list %}
+{% set area = {'BGP Session State': 'BGP', 'Interface Health': 'Interfaces', 'MLAG State': 'MLAG', 'Route Count': 'Routing',
+  'BGP Peer Session Established': 'BGP', 'Routing Protocol Model': 'Routing', 'Route Presence per VRF': 'Routing',
+  'Interfaces Status': 'Interfaces', 'Interface Errors': 'Interfaces', 'Interface Discards': 'Interfaces', 'No Err-Disabled Interfaces': 'Interfaces', 'Port-Channels Healthy': 'Interfaces', 'No Illegal LACP': 'Interfaces', 'LLDP Neighbors Present': 'Connectivity',
+  'MLAG Status Active': 'MLAG', 'MLAG Interfaces': 'MLAG', 'MLAG Config Sanity': 'MLAG', 'VXLAN Config Sanity': 'VXLAN',
+  'NTP Synchronised': 'System', 'No Running/Startup Diff': 'Configuration', 'No Agent Crash Logs': 'System', 'No Coredumps': 'System', 'Clean Reload Cause': 'System', 'Memory Free': 'System', 'No STP BPDU Errors': 'STP', 'ZeroTouch Disabled': 'Configuration', 'eAPI Enabled': 'System'} %}
+{% set known = {'NTP Synchronised': 'no NTP reachability from the lab'} %}
+{% set ns = namespace(two={}, b={}, a={}, cells=[]) %}
+{% for x in two %}{% set _ = ns.two.update({x.post.device.name ~ '|' ~ x.post.validation_rule.name: x}) %}{% endfor %}
+{% for x in before %}{% set _ = ns.b.update({x.post.device.name ~ '|' ~ x.post.validation_rule.name: x}) %}{% endfor %}
+{% for x in after %}{% set _ = ns.a.update({x.post.device.name ~ '|' ~ x.post.validation_rule.name: x}) %}{% endfor %}
+{% set devs = ((two + after) | map(attribute='post.device.name') | unique | sort | list) %}
+{% set two_rules = (two | map(attribute='post.validation_rule.name') | unique | sort | list) %}
+{% set one_rules = (after | map(attribute='post.validation_rule.name') | unique | sort | list) %}
+{% set before_rules = (before | map(attribute='post.validation_rule.name') | unique | sort | list) %}
+{#- one cell per device x rule, with a normalised outcome key -#}
+{% for d in devs %}
+{% for r in two_rules %}{% set x = ns.two.get(d ~ '|' ~ r) %}
+{% set o = 'unknown' if (not x or x.match == 'UNKNOWN') else ('changed' if x.match == 'FAIL' else 'ok') %}
+{% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r, 'Other'), 'type': 'before vs. after', 'before': '—', 'after': '—', 'outcome': o, 'x': x}) %}{% endfor %}
+{% for r in one_rules %}{% set xb = ns.b.get(d ~ '|' ~ r) %}{% set xa = ns.a.get(d ~ '|' ~ r) %}{% set mb = xb.match if xb else None %}{% set ma = xa.match if xa else None %}
+{% set o = 'unknown' if (ma == 'UNKNOWN' or mb == 'UNKNOWN' or not xa or not xb) else ('ok' if (mb == 'PASS' and ma == 'PASS') else ('regressed' if (mb == 'PASS' and ma == 'FAIL') else ('fixed' if (mb == 'FAIL' and ma == 'PASS') else 'preexisting'))) %}
+{% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r, 'System'), 'type': 'absolute', 'before': (mb or 'not run'), 'after': (ma or 'not run'), 'outcome': o, 'x': xa or xb}) %}{% endfor %}
+{% endfor %}
+{% set icon = {'ok': '✅', 'changed': '⚠️', 'regressed': '⚠️', 'fixed': '🔧', 'preexisting': '❌', 'unknown': '❔'} %}
+{% set label = {'ok': 'OK', 'changed': 'Changed', 'regressed': 'Regressed', 'fixed': 'Fixed', 'preexisting': 'Pre-existing', 'unknown': 'Inconclusive'} %}
+{% macro count(cells, key) %}{{ cells | selectattr('outcome', 'equalto', key) | list | length }}{% endmacro %}
+{% set total = ns.cells | length %}
+{% set nchg = ns.cells | selectattr('outcome', 'equalto', 'changed') | list | length %}{% set nreg = ns.cells | selectattr('outcome', 'equalto', 'regressed') | list | length %}
+{% set nfix = ns.cells | selectattr('outcome', 'equalto', 'fixed') | list | length %}{% set npre = ns.cells | selectattr('outcome', 'equalto', 'preexisting') | list | length %}{% set nunk = ns.cells | selectattr('outcome', 'equalto', 'unknown') | list | length %}
+{% set nok = ns.cells | selectattr('outcome', 'equalto', 'ok') | list | length %}
+Every rule was evaluated on the **before** snapshot (*{{ pre.name }}*) and the **after** snapshot (*{{ post.name }}*): **{{ total }} checks** over **{{ devs | length }} devices** and **{{ (two_rules | length) + (one_rules | length) }} rules**. {{ two_rules | length }} rules compare the two snapshots directly; {{ one_rules | length }} absolute rules were judged in each snapshot and the two verdicts compared. {% if nchg == 0 and nreg == 0 and nunk == 0 %}**Nothing changed unexpectedly and nothing regressed.**{% else %}{% if nchg %}**{{ nchg }} change{{ 's' if nchg != 1 }}** detected{% endif %}{% if nchg and nreg %} and {% endif %}{% if nreg %}**{{ nreg }} regression{{ 's' if nreg != 1 }}**{% endif %}{% if nunk %}{{ ', ' if (nchg or nreg) }}**{{ nunk }} inconclusive**{% endif %} — see the findings below the tables.{% endif %}{% if nfix %} **{{ nfix }}** check{{ 's' if nfix != 1 }} {{ 'was' if nfix == 1 else 'were' }} fixed by this change.{% endif %}{% if npre %} **{{ npre }}** fail{{ 's' if npre == 1 }} in both snapshots and {{ 'is' if npre == 1 else 'are' }} not caused by it{% for r in ns.cells | selectattr('outcome', 'equalto', 'preexisting') | map(attribute='rule') | unique if r in known %} ({{ r }}: {{ known[r] }}){% endfor %}.{% endif %}
+{% set only_before = before_rules | reject('in', one_rules) | list %}{% set only_after = one_rules | reject('in', before_rules) | list %}
+{% set before_devs = (before | map(attribute='post.device.name') | unique | list) %}{% set after_devs = (after | map(attribute='post.device.name') | unique | list) %}
+{% set dev_mismatch = (before_devs | reject('in', after_devs) | list) + (after_devs | reject('in', before_devs) | list) %}
+{% if only_before or only_after or dev_mismatch %}
+> ⚠️ **The two snapshots did not run the same checks.** {% if only_before %}Evaluated only before: {{ only_before | join(', ') }}. {% endif %}{% if only_after %}Evaluated only after: {{ only_after | join(', ') }}. {% endif %}{% if dev_mismatch %}Devices present in only one snapshot: {{ dev_mismatch | unique | join(', ') }}. {% endif %}Those checks are marked "not run" below; re-take both snapshots with the same rule groups for a clean comparison.
+{% endif %}
+
+### Summary totals
+
+| Total checks | ✅ OK | ⚠️ Changed / regressed | 🔧 Fixed | ❌ Pre-existing | ❔ Inconclusive |
+| :- | :- | :- | :- | :- | :- |
+| {{ total }} | {{ nok }} | {{ nchg + nreg }} | {{ nfix }} | {{ npre }} | {{ nunk }} |
+
+### Summary totals per device
+
+| Device | Total | ✅ OK | ⚠️ Changed / regressed | 🔧 Fixed | ❌ Pre-existing | ❔ Inconclusive | Areas affected |
+| :- | :- | :- | :- | :- | :- | :- | :- |
+{% for d in devs -%}
+{%- set dc = ns.cells | selectattr('device', 'equalto', d) | list -%}
+{%- set bad = dc | rejectattr('outcome', 'in', ['ok', 'fixed', 'preexisting']) | map(attribute='area') | unique | sort | list -%}
+| **{{ d }}** | {{ dc | length }} | {{ count(dc, 'ok') }} | {{ (count(dc, 'changed') | int) + (count(dc, 'regressed') | int) }} | {{ count(dc, 'fixed') }} | {{ count(dc, 'preexisting') }} | {{ count(dc, 'unknown') }} | {{ bad | join(', ') or '-' }} |
+{% endfor %}
+### Summary totals per area
+
+| Area | Total | ✅ OK | ⚠️ Changed / regressed | 🔧 Fixed | ❌ Pre-existing | ❔ Inconclusive |
+| :- | :- | :- | :- | :- | :- | :- |
+{% for ar in ns.cells | map(attribute='area') | unique | sort -%}
+{%- set ac = ns.cells | selectattr('area', 'equalto', ar) | list -%}
+| **{{ ar }}** | {{ ac | length }} | {{ count(ac, 'ok') }} | {{ (count(ac, 'changed') | int) + (count(ac, 'regressed') | int) }} | {{ count(ac, 'fixed') }} | {{ count(ac, 'preexisting') }} | {{ count(ac, 'unknown') }} |
+{% endfor %}
+### Detailed results
+
+Legend: **before vs. after** rules report *OK* (unchanged) or *Changed*; **absolute** rules show the verdict before → after: *OK* (passed both times), *Regressed* (passed before, fails after), *Fixed* (failed before, passes after), *Pre-existing* (failed both times).
+
+{% for d in devs %}
+#### {{ d }}
+
+| Area | Rule | Type | Before | After | Outcome | Details |
+| :- | :- | :- | :- | :- | :- | :- |
+{% for c in ns.cells | selectattr('device', 'equalto', d) | sort(attribute='area') -%}
+{%- set detail = (humanize(c.x.diff) | replace('\n', ' ') | replace('- ', '') | replace('|', '/') | trim) if (c.x and c.x.diff and c.outcome not in ['ok']) else '-' -%}
+| {{ c.area }} | {{ c.rule }} | {{ c.type }} | {{ c.before }} | {{ c.after }} | {{ icon[c.outcome] }} {{ label[c.outcome] }} | {{ detail[:300] }}{% if detail | length > 300 %}…{% endif %} |
+{% endfor %}
+
+{% endfor %}
+{% set findings = ns.cells | selectattr('outcome', 'in', ['changed', 'regressed', 'unknown']) | list %}
+{% if findings %}
+### Findings
+
+{% for c in findings | sort(attribute='device') -%}
+**{{ icon[c.outcome] }} {{ label[c.outcome] }} — {{ c.rule }} on {{ c.device }}** — {{ c.x.post.validation_rule.description if c.x else '' }}
+
+{% if c.x and c.x.diff %}{{ humanize(c.x.diff) }}
+<details><summary>Detailed diff (jdiff output)</summary>
+
+```
+{{ c.x.diff | tojson(indent=2) }}
+```
+
+</details>
+{% else %}No further detail was recorded for this check.
+{% endif %}
+
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endif %}

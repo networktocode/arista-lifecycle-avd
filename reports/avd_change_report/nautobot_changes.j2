@@ -1,0 +1,52 @@
+{% if changes is none %}
+> ⚠️ **Data source unavailable.** The Change Log saved view could not be loaded.
+{% else -%}
+{#- Exact membership, not string matching: IDs of the AVD devices, their interfaces, addresses and cables come from the
+    fabric GraphQL query; the remaining AVD objects are matched by their exact names / prefixes. -#}
+{% set ns = namespace(ids=[], names=[], rows=[], users=[], actions={}) %}
+{% for d in ((gql_fabric.devices if gql_fabric else []) or []) %}
+{% set _ = ns.ids.append(d.id) %}{% if d.location %}{% set _ = ns.ids.append(d.location.id) %}{% endif %}{% if d.rack %}{% set _ = ns.ids.append(d.rack.id) %}{% endif %}
+{% for i in d.interfaces or [] %}{% set _ = ns.ids.append(i.id) %}{% if i.cable %}{% set _ = ns.ids.append(i.cable.id) %}{% endif %}{% for ip in i.ip_addresses or [] %}{% set _ = ns.ids.append(ip.id) %}{% endfor %}{% endfor %}
+{% endfor %}
+{% set names = ['AVD Fabric Settings', 'AVD Management Settings', 'BLUE', 'GREEN', 'MGMT', 'BLUE_VLAN_100', 'GREEN_VLAN_200', 'MLAG_L3_VRF_BLUE', 'MLAG_L3_VRF_GREEN', 'MLAG_L3', 'MLAG', 'DC1', 'AVD DC1 Devices', 'AVD DC1', 'AVD Validation', 'DC1 Change Window'] %}
+{% set prefixes = ['10.99.1.0/25', '10.99.1.128/25', '10.101.0.0/24', '10.101.1.0/24', '10.101.254.0/31', '10.101.255.0/31', '10.10.100.0/24', '10.10.200.0/24'] %}
+{% set models = ['device', 'interface', 'ipaddress', 'cable', 'location', 'rack', 'configcontext', 'prefix', 'vlan', 'vrf', 'dynamicgroup', 'operationalcompliancesetting', 'validationrulegroup'] %}
+{% set candidates = changes.filter(time__gte=reporting_period_start_date, changed_object_type__model__in=models).order_by('-time') %}
+{% for c in candidates[:5000] -%}
+{% set repr = c.object_repr or '' %}
+{% set hit = (c.changed_object_id | string) in ns.ids or repr in names or (c.changed_object_type.model == 'vlan' and repr.split(' (')[0] in names) or (c.changed_object_type.model == 'prefix' and repr.split(':')[0] in prefixes) %}
+{% if hit %}{% set _ = ns.rows.append(c) %}{% if c.user_name not in ns.users %}{% set _ = ns.users.append(c.user_name) %}{% endif %}{% set _ = ns.actions.update({c.action: ns.actions.get(c.action, 0) + 1}) %}{% endif %}
+{%- endfor %}
+{% set n = ns.rows | length %}
+{% if n == 0 -%}
+No Nautobot objects belonging to the AVD fabric (devices, interfaces, addresses, cables, config contexts, prefixes, VLANs, VRFs) were edited in the last **{{ reporting_period_start }} day{{ 's' if reporting_period_start != 1 }}**. The source of truth did not move while this change happened.
+{% else -%}
+{% set nusers = ns.users | length %}
+**{{ n }} Nautobot object{{ 's' if n != 1 }}** belonging to the AVD fabric {{ 'was' if n == 1 else 'were' }} edited in the last **{{ reporting_period_start }} day{{ 's' if reporting_period_start != 1 }}** by {% if nusers == 1 %}**{{ ns.users[0] }}**{% else %}**{{ nusers }} users**{% endif %}: {% for a, cnt in ns.actions.items() %}{{ cnt }} {{ a }}{{ 'd' if a.endswith('e') else 'ed' }}{{ ', ' if not loop.last }}{% endfor %}.
+{% if nusers > 1 %}
+### Changes per user
+
+| User | Changes | Created | Updated | Deleted | First (UTC) | Last (UTC) | Object types |
+| :- | -: | -: | -: | -: | :- | :- | :- |
+{% for u in ns.users | sort -%}
+{%- set ur = ns.rows | selectattr('user_name', 'equalto', u) | list -%}
+{%- set times = ur | map(attribute='time') | list -%}
+| **{{ u }}** | {{ ur | length }} | {{ ur | selectattr('action', 'equalto', 'create') | list | length }} | {{ ur | selectattr('action', 'equalto', 'update') | list | length }} | {{ ur | selectattr('action', 'equalto', 'delete') | list | length }} | {{ (times | min).strftime('%Y-%m-%d %H:%M') }} | {{ (times | max).strftime('%Y-%m-%d %H:%M') }} | {{ ur | map(attribute='changed_object_type.model') | unique | sort | join(', ') }} |
+{% endfor %}
+{% endif %}
+{% for u in ns.users | sort -%}
+{%- set ur = ns.rows | selectattr('user_name', 'equalto', u) | list %}
+{% if nusers > 1 %}
+### {{ u }} ({{ ur | length }} change{{ 's' if ur | length != 1 }})
+{% endif %}
+
+| Time (UTC) | Action | Object | Type |
+| :- | :- | :- | :- |
+{% for c in ur[:25] -%}
+| {{ c.time.strftime('%Y-%m-%d %H:%M') }} | {{ c.action }} | {{ c.object_repr }} | {{ c.changed_object_type.model }} |
+{% endfor %}
+{% if ur | length > 25 %}Showing the 25 most recent of {{ ur | length }} for {{ u }}.{% endif %}
+
+{% endfor %}
+{% endif %}
+{% endif %}

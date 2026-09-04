@@ -1,0 +1,44 @@
+{% if gql_fabric is none or gql_cc is none or gc is none %}
+> ⚠️ **Data source unavailable.** This section needs the device intent (GraphQL), the AVD config contexts (GraphQL) and the Golden Configuration saved view.
+{% else -%}
+{% set devices = ((gql_fabric.devices if gql_fabric else []) or []) | sort(attribute='name') %}
+{% set ccs = ((gql_cc.config_contexts if gql_cc else []) or []) %}
+{% set ns = namespace(intent_shared=0, intent_local=0, config=0, backed=0, rows=[]) %}
+{% for c in ccs %}{% set ns.intent_shared = ns.intent_shared + ((c.data | tojson(indent=2)).splitlines() | length) %}{% endfor %}
+{% set gcs = gc.filter(device__tags__name='avd').select_related('device') | list %}
+{% for d in devices -%}
+{% set avd = (d.local_config_context_data or {}).get('avd', {}) %}
+{% set local_lines = (avd | tojson(indent=2)).splitlines() | length if avd else 0 %}
+{% set ns.intent_local = ns.intent_local + local_lines %}
+{% set g = (gcs | selectattr('device.name', 'equalto', d.name) | list | first) %}
+{% set cfg_lines = (g.backup_config.splitlines() | length) if g and g.backup_config else 0 %}
+{% set ns.config = ns.config + cfg_lines %}
+{% if g and g.backup_last_success_date %}{% set ns.backed = ns.backed + 1 %}{% endif %}
+{% set _ = ns.rows.append({'name': d.name, 'role': d.role.name if d.role else '', 'local': local_lines, 'cfg': cfg_lines, 'backup': g.backup_last_success_date if g else None}) %}
+{%- endfor %}
+{% set intent = ns.intent_shared + ns.intent_local %}
+{% set amp = (ns.config / intent) | round(1) if intent else 0 %}
+{% if ns.config == 0 -%}
+Intent for this fabric is **{{ intent }} lines** of structured data in Nautobot ({{ ns.intent_shared }} shared AVD settings + {{ ns.intent_local }} per-device facts), but **no configuration backup** exists yet for the {{ devices | length }} device{{ 's' if devices | length != 1 }}, so the rendered-configuration side cannot be measured. Run the Golden Configuration backup job.
+{% else -%}
+Intent for this fabric is **{{ intent }} lines** of structured data in Nautobot: **{{ ns.intent_shared }}** lines of shared AVD settings (the two AVD config contexts) plus **{{ ns.intent_local }}** lines of per-device facts. That intent is rendered into **{{ ns.config }} lines** of EOS configuration across the **{{ devices | length }} device{{ 's' if devices | length != 1 }}** (as last backed up by Golden Configuration), a **{{ amp }}x** amplification.
+
+| | | | | |
+|:---:|:---:|:---:|:---:|:---:|
+| **{{ intent }}** | → | **{{ ns.config }}** | = | **{{ amp }}x** |
+| lines of intent | | lines of configuration | | ratio (configuration ÷ intent) |
+{% endif %}
+
+{% set latest = results.filter(post__device__tags__name='avd', date__gte=reporting_period_start_date, pre__isnull=False).order_by('-date').first() if results is not none else none %}
+{% set post_time = latest.post.snapshot.created if latest else none %}
+{% set fresh = ns.rows | selectattr('backup') | selectattr('backup', 'gt', post_time) | list | length if post_time else 0 %}
+**{{ ns.backed }} of {{ devices | length }} device{{ 's' if devices | length != 1 }}** {{ 'has' if ns.backed == 1 else 'have' }} a successful configuration backup.{% if post_time %} {% if fresh == devices | length %}All of them were backed up **after** the after-snapshot ({{ post_time.strftime('%-d %b %Y %H:%M') }} UTC), so the configuration figures reflect the changed fabric.{% elif fresh == 0 %}**None was backed up after the after-snapshot** ({{ post_time.strftime('%-d %b %Y %H:%M') }} UTC): the configuration figures above describe the fabric *before* this change. Run the Golden Configuration backup job to refresh them.{% else %}Only **{{ fresh }}** {{ 'was' if fresh == 1 else 'were' }} backed up after the after-snapshot ({{ post_time.strftime('%-d %b %Y %H:%M') }} UTC); the others still show pre-change configuration.{% endif %}{% endif %}
+
+| Device | Role | Per-device intent (lines) | Configuration (lines) | Last successful backup (UTC) |
+| --- | --- | --: | --: | --- |
+{% for r in ns.rows -%}
+| {{ r.name }} | {{ r.role }} | {{ r.local }} | {{ r.cfg if r.cfg else '—' }} | {{ r.backup.strftime('%Y-%m-%d %H:%M') if r.backup else 'never' }} |
+{% endfor %}
+
+Shared AVD settings: {% for c in ccs %}**{{ c.name }}** ({{ (c.data | tojson(indent=2)).splitlines() | length }} lines){{ ', ' if not loop.last }}{% endfor %}.
+{% endif %}

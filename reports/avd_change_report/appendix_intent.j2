@@ -1,0 +1,34 @@
+{% if gql_fabric is none or gql_cc is none %}
+> ⚠️ **Data source unavailable.** This appendix needs the device intent and the AVD config contexts (GraphQL).
+{% else -%}
+{% set devices = ((gql_fabric.devices if gql_fabric else []) or []) | sort(attribute='name') %}
+{% set ccs = ((gql_cc.config_contexts if gql_cc else []) or []) %}
+This is the intent AVD renders from: the shared fabric and management settings, then each device's node facts. It is shown exactly as Nautobot stores it.
+{% for c in ccs %}
+
+## {{ c.name }}
+
+{{ c.description }}
+
+```json
+{{ c.data | tojson(indent=2) }}
+```
+{% endfor %}
+{% for d in devices %}
+
+## {{ d.name }} ({{ d.role.name if d.role else 'device' }})
+
+{% set avd = (d.local_config_context_data or {}).get('avd') %}
+{% if avd %}
+```json
+{{ avd | tojson(indent=2) }}
+```
+{% else %}
+No per-device AVD facts recorded.
+{% endif %}
+{% set links = d.interfaces | selectattr('connected_interface') | list %}
+{% if links %}
+Fabric links: {% for i in links | sort(attribute='name') %}{{ i.name }} → {{ i.connected_interface.device.name }} {{ i.connected_interface.name }}{{ '; ' if not loop.last }}{% endfor %}.
+{% endif %}
+{% endfor %}
+{% endif %}

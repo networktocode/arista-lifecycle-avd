@@ -1,0 +1,46 @@
+{% if results is none %}
+> ⚠️ **Data source unavailable.** The Operational Compliance results saved view could not be loaded.
+{% else -%}
+{% set scoped = results.filter(post__device__tags__name='avd', date__gte=reporting_period_start_date) %}
+{% set latest = scoped.filter(pre__isnull=False).order_by('-date').first() %}
+{% set devices = ((gql_fabric.devices if gql_fabric else []) or []) %}
+{% if not latest %}
+No before/after comparison exists for the AVD devices in the last **{{ reporting_period_start }} day{{ 's' if reporting_period_start != 1 }}** (since {{ reporting_period_start_date.strftime('%-d %b %Y %H:%M') }} UTC). The fabric currently has **{{ devices | length }} device{{ 's' if devices | length != 1 }}** in scope: {{ devices | map(attribute='name') | join(', ') }}.
+{% else -%}
+{% set cmp = results.filter(job=latest.job) %}
+{% set post = latest.post.snapshot %}{% set pre = latest.pre.snapshot %}
+{% set who = latest.job.user.username if latest.job.user else 'an automated job' %}
+{% set dev_names = cmp.values_list('post__device__name', flat=True) | unique | sort | list %}
+The change is bracketed by two Operational Compliance snapshots. **{{ who }}** compared them on **{{ latest.date.strftime('%-d %b %Y at %H:%M UTC') }}**; the window between the snapshots was **{{ ((post.created - pre.created).total_seconds() / 60) | round(0) | int }} minute{{ 's' if ((post.created - pre.created).total_seconds() / 60) | round(0) | int != 1 }}**.
+
+| | Snapshot | Taken (UTC) |
+| --- | --- | --- |
+| Before | {{ pre.name }} | {{ pre.created.strftime('%Y-%m-%d %H:%M:%S') }} |
+| After | {{ post.name }} | {{ post.created.strftime('%Y-%m-%d %H:%M:%S') }} |
+
+**{{ dev_names | length }} device{{ 's' if dev_names | length != 1 }}** {{ 'was' if dev_names | length == 1 else 'were' }} covered:
+
+| Device | Role | Rack | Model | Management IP |
+| --- | --- | --- | --- | --- |
+{% for d in devices | sort(attribute='name') if d.name in dev_names -%}
+| {{ d.name }} | {{ d.role.name if d.role else '—' }} | {{ d.rack.name if d.rack else '—' }} | {{ d.device_type.model if d.device_type else '—' }} | {{ d.primary_ip4.address if d.primary_ip4 else '—' }} |
+{% endfor %}
+{% set others = scoped.filter(pre__isnull=False).exclude(job=latest.job).values('job', 'pre__snapshot__name', 'post__snapshot__name').annotate(n=Count('pk'), failed=Count('pk', filter=Q(match='FAIL')), when=Max('date')).order_by('-when') %}
+{% set others_list = others | list %}
+{% set n_others = others_list | length %}
+{% set period_checks = (others_list | sum(attribute='n')) + (cmp | length) %}
+{% set period_failed = (others_list | sum(attribute='failed')) + (cmp.filter(match='FAIL') | length) %}
+{% if n_others == 0 -%}
+This was the only comparison in the window.
+{% else -%}
+**{{ n_others }} other comparison{{ 's' if n_others != 1 }}** {{ 'was' if n_others == 1 else 'were' }} run in the window; this report describes the newest one. Across the whole window that is **{{ n_others + 1 }} comparisons** and **{{ period_checks }} before/after checks**, of which **{{ period_failed }} failed**{% if period_failed == 0 %} — every change in the period left the fabric as it found it{% endif %}.
+
+| When (UTC) | Before | After | Checks | Failed |
+| --- | --- | --- | --: | --: |
+{% for o in others_list[:15] -%}
+| {{ o.when.strftime('%Y-%m-%d %H:%M') }} | {{ o.pre__snapshot__name }} | {{ o.post__snapshot__name }} | {{ o.n }} | {{ o.failed }} |
+{% endfor %}
+{% if n_others > 15 %}Showing the 15 most recent of {{ n_others }}.{% endif %}
+{% endif %}
+{% endif %}
+{% endif %}

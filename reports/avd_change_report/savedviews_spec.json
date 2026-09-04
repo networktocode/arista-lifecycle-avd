@@ -1,0 +1,18 @@
+{
+ "OC Validation Results (Reports)": {
+  "view": "plugins:nautobot_operational_compliance:validationresult_list",
+  "config": {}
+ },
+ "OC Snapshots (Reports)": {
+  "view": "plugins:nautobot_operational_compliance:snapshot_list",
+  "config": {}
+ },
+ "Golden Config (Reports)": {
+  "view": "plugins:nautobot_golden_config:goldenconfig_list",
+  "config": {}
+ },
+ "Object Changes (Reports)": {
+  "view": "extras:objectchange_list",
+  "config": {}
+ }
+}

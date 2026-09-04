@@ -1,0 +1,99 @@
+name: AVD Change Report
+description: Per-change artifact for the Arista AVD fabric (DC1), told in plain English from the latest Operational Compliance
+  snapshot comparison, with intent-to-configuration amplification.
+enabled: true
+required_objects:
+  savedviews:
+  - name: OC Validation Results (Reports)
+  - name: OC Snapshots (Reports)
+  - name: Golden Config (Reports)
+  - name: Object Changes (Reports)
+  graphql_queries:
+  - name: AVD Fabric Intent (Reports)
+  - name: AVD Config Contexts (Reports)
+blocks:
+- type: title_page
+  heading_text: AVD Change Report
+  heading_level: h1
+  subheading_text: DC1 fabric - change verification and intent-to-configuration summary
+  author: Nautobot
+- type: table_of_contents
+  include_headings_up_to: h3
+- type: custom_jinja
+  label: Summary
+  heading_text: Summary
+  heading_level: h1
+  render_as_markdown: true
+  content_file: summary.j2
+  variable_mappings:
+  - name: results
+    source: saved_view:OC Validation Results (Reports)
+  - name: gql_fabric
+    source: graphql_query:AVD Fabric Intent (Reports)
+  - name: gql_cc
+    source: graphql_query:AVD Config Contexts (Reports)
+  - name: gc
+    source: saved_view:Golden Config (Reports)
+- type: custom_jinja
+  label: Change analysis
+  heading_text: Change Analysis (before vs. after)
+  heading_level: h1
+  render_as_markdown: true
+  content_file: change_analysis.j2
+  variable_mappings:
+  - name: results
+    source: saved_view:OC Validation Results (Reports)
+- type: custom_jinja
+  label: The change
+  heading_text: The change
+  heading_level: h1
+  render_as_markdown: true
+  content_file: the_change.j2
+  variable_mappings:
+  - name: results
+    source: saved_view:OC Validation Results (Reports)
+  - name: gql_fabric
+    source: graphql_query:AVD Fabric Intent (Reports)
+- type: custom_jinja
+  label: Intent vs configuration
+  heading_text: Intent vs. configuration
+  heading_level: h1
+  render_as_markdown: true
+  content_file: intent_vs_config.j2
+  variable_mappings:
+  - name: gql_fabric
+    source: graphql_query:AVD Fabric Intent (Reports)
+  - name: gql_cc
+    source: graphql_query:AVD Config Contexts (Reports)
+  - name: gc
+    source: saved_view:Golden Config (Reports)
+  - name: results
+    source: saved_view:OC Validation Results (Reports)
+- type: custom_jinja
+  label: Nautobot changes
+  heading_text: Nautobot changes in the window
+  heading_level: h1
+  render_as_markdown: true
+  content_file: nautobot_changes.j2
+  variable_mappings:
+  - name: changes
+    source: saved_view:Object Changes (Reports)
+- type: custom_jinja
+  label: Appendix - intent
+  heading_text: 'Appendix: the intent'
+  heading_level: h1
+  render_as_markdown: true
+  content_file: appendix_intent.j2
+  variable_mappings:
+  - name: gql_fabric
+    source: graphql_query:AVD Fabric Intent (Reports)
+  - name: gql_cc
+    source: graphql_query:AVD Config Contexts (Reports)
+- type: rich_text
+  label: How this report is built
+  heading_text: How this report is built
+  heading_level: h2
+  content: This report reads live data from Nautobot. "The change" is the most recent Operational Compliance snapshot comparison
+    taken within the reporting period for the AVD devices; its before/after results and the validation results of the after-snapshot
+    make up the check sections. Device facts, interfaces and the AVD settings come from the Nautobot source of truth; configuration
+    line counts come from the latest Golden Configuration backup of each device. Nothing here is typed by hand.

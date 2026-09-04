@@ -1,0 +1,4 @@
+{
+ "AVD Fabric Intent (Reports)": "query { devices(tags: [\"avd\"]) { id name role { name } location { id name parent { name } } rack { id name } device_type { model manufacturer { name } } platform { name } primary_ip4 { address } local_config_context_data interfaces { id name enabled description ip_addresses { id address } cable { id } connected_interface { name device { name } } } } }",
+ "AVD Config Contexts (Reports)": "query { config_contexts(name: [\"AVD Fabric Settings\", \"AVD Management Settings\"]) { name description weight data } }"
+}
