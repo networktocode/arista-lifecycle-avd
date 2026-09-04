@@ -112,6 +112,7 @@ management_interfaces:
   vrf: MGMT
   ip_address: 192.168.0.11/24
   type: oob
+  gateway: 192.168.0.1
 metadata:
   is_deployed: true
   platform: 7500R3
@@ -262,6 +263,10 @@ sflow:
   run: true
 spanning_tree:
   mode: none
+static_routes:
+- vrf: MGMT
+  prefix: 0.0.0.0/0
+  next_hop: 192.168.0.1
 transceiver_qsfp_default_mode_4x10: true
 vlan_internal_order:
   allocation: ascending
