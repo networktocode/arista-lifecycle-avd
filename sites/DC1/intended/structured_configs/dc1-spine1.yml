@@ -262,8 +262,6 @@ sflow:
   run: true
 spanning_tree:
   mode: none
-tcam_profile:
-  system: vxlan-routing
 transceiver_qsfp_default_mode_4x10: true
 vlan_internal_order:
   allocation: ascending

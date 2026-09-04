@@ -35,3 +35,59 @@ bgp_graceful_restart:
 fabric_ip_addressing:
   mlag:
     algorithm: same_subnet
+custom_platform_settings:
+  - platforms:
+      - 7500R3
+    digital_twin:
+      platform: vEOS-lab
+    reload_delay:
+      mlag: 900
+      non_mlag: 1020
+    feature_support:
+      private_vlan: false
+      errdisable_causes:
+        acl:
+          recovery: false
+        tpid:
+          recovery: false
+          detection: false
+        dot1x_coa:
+          recovery: false
+          detection: false
+        stuck_queue:
+          recovery: false
+        port_breakout:
+          recovery: false
+          detection: false
+        storm_control:
+          recovery: false
+          detection: false
+        internal_error:
+          recovery: false
+          detection: false
+        interface_speed:
+          recovery: false
+          detection: false
+        fabric_capacity_low:
+          recovery: false
+          detection: false
+        transceiver_adapter:
+          recovery: false
+          detection: false
+        hardware_speed_group:
+          recovery: false
+          detection: false
+        switchcard_unreachable:
+          recovery: false
+          detection: false
+        error_correction_encoding:
+          recovery: false
+          detection: false
+        dot1x_phone_classification:
+          recovery: false
+          detection: false
+      per_interface_l2_mtu: false
+      evpn_gateway_rd_rt_rewrite: true
+      subinterface_monitor_session: false
+      evpn_gateway_all_active_multihoming: true
+    management_interface: Management0
