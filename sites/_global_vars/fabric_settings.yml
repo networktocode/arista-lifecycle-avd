@@ -90,4 +90,4 @@ custom_platform_settings:
       evpn_gateway_rd_rt_rewrite: true
       subinterface_monitor_session: false
       evpn_gateway_all_active_multihoming: true
-    management_interface: Management0
+    management_interface: Management1
