@@ -4,10 +4,14 @@ bgp_session_state:
   rule_type: "exact_match"
   description: "Every BGP neighbor stays established with a stable prefix count."
   collectors:
-    - name: "textfsm"
+    # JSON keyed by VRF and neighbour instead of the TextFSM row list: jdiff only pairs anchored list items by name when
+    # both lists have the same length, so a neighbour added or removed by the change produced a positional diff.
+    # The excludes keep exactly what the original compared: peer state and received prefixes.
+    - name: "json"
       platform: "arista_eos"
-      command: "show ip bgp summary"
-      jmespath: "[*].[$bgp_neigh$, state_pfxrcd]"
+      command: "show ip bgp summary vrf all | json"
+      jmespath: ""   # raw mode: required (empty) when `exclude` is used; the datasource only writes keys present here
+      exclude: ["msgReceived", "msgSent", "inMsgQueue", "outMsgQueue", "upDownTime", "version", "asn", "description", "underMaintenance", "prefixAccepted", "routerId", "vrf"]
 interface_health:
   display_name: "Interface Health"
   rule_type: "exact_match"
@@ -16,7 +20,9 @@ interface_health:
     - name: "napalm"
       platform: "arista_eos"
       napalm_getter: "get_interfaces"
-      jmespath: "*.{is_up: is_up, is_enabled: is_enabled}"
+      # dict keyed by interface (with the noisy fields excluded) rather than an anchored list: see the BGP rule above.
+      jmespath: ""   # raw mode: required (empty) when `exclude` is used
+      exclude: ["mtu", "speed", "last_flapped", "description", "mac_address"]
 mlag_state:
   display_name: "MLAG State"
   rule_type: "exact_match"
@@ -36,4 +42,4 @@ route_count:
     - name: "json"
       platform: "arista_eos"
       command: "show ip route summary | json"
-      jmespath: "totalRoutes"
+      jmespath: "[{routes: {total: vrfs.default.totalRoutes}}]"

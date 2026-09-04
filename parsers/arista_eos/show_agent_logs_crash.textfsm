@@ -1,0 +1,6 @@
+# One record per non-empty output line. `show agent logs crash` prints nothing when no agent
+# has crashed, so the parsed list is empty in the healthy case.
+Value LINE (\S.*)
+
+Start
+  ^${LINE} -> Record

@@ -1,0 +1,6 @@
+# One record per non-empty output line. `show running-config diffs` prints nothing when the
+# running and startup configs match, so the parsed list is empty in the healthy case.
+Value LINE (\S.*)
+
+Start
+  ^${LINE} -> Record

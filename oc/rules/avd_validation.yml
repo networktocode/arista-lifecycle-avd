@@ -1,0 +1,316 @@
+---
+# Nautobot Operational Compliance rules that mirror the ANTA tests AVD (pyavd 6.3.0
+# AVD_TEST_INDEX) generates for the DC1 L3LS-EVPN design. ANTA tests are absolute assertions,
+# so these are one-sided rule types (parameter_match / operator / regex) evaluated on a single
+# snapshot by the Take Snapshot job. Hardware-only tests (temperature, power, cooling,
+# transceivers, inventory) are omitted, as ANTA itself skips them on cEOS.
+#
+# jdiff conventions used here:
+#   - rules need anchored data: a list of {name: {field: value}} dicts. `dict.$*$.[f]` anchors on
+#     the keys of a dict; `[{name: {...}}]` builds one anchored item by hand.
+#   - operator modes: is-in, not-in, in-range, not-in-range, all-same, is-gt, is-lt, is-ge, is-le,
+#     contains, not-contains, is-subset, is-subset-ci (no equality operator: use is-in [x]).
+#   - JMESPath has no arithmetic, so thresholds are expressed on raw values.
+#
+# --- Routing -------------------------------------------------------------------------
+bgp_peer_session_established:
+  display_name: "BGP Peer Session Established"
+  rule_type: "operator"
+  description: "ANTA VerifyBGPPeerSession: every BGP peer in every VRF is Established (the JSON summary is used rather than the NAPALM getter, which returned nothing through the app when a peer was administratively down)."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show ip bgp summary vrf all | json"
+      jmespath: "[{bgp: {peers_not_established: length(vrfs.*.peers[].*[] | [?peerState != 'Established'])}}]"
+routing_protocol_model:
+  display_name: "Routing Protocol Model"
+  rule_type: "parameter_match"
+  description: "ANTA VerifyRoutingProtocolModel: configured and operating protocol model are multi-agent."
+  evaluate_args:
+    mode: "match"
+    params:
+      configuredProtoModel: "multi-agent"
+      operatingProtoModel: "multi-agent"
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show ip route summary | json"
+      jmespath: "[{model: protoModelStatus}]"
+route_presence_per_vrf:
+  display_name: "Route Presence per VRF"
+  rule_type: "operator"
+  description: "ANTA VerifyIPv4RoutePresencePerVRF: every VRF on the device carries at least one route."
+  evaluate_args:
+    params:
+      mode: "is-gt"
+      operator_data: 0
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show ip route vrf all summary | json"
+      jmespath: "vrfs.$*$.[totalRoutes]"
+# --- Interfaces ----------------------------------------------------------------------
+interfaces_status:
+  display_name: "Interfaces Status"
+  rule_type: "operator"
+  description: "ANTA VerifyInterfacesStatus: every interface present on the device is connected (in this fabric every configured port has a link, including the leafs' server-facing Ethernet1 / Port-Channel1 to the dual-homed LACP host). Anchored per interface: the diff names the port."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: ["connected"]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show interfaces status | json"
+      jmespath: "interfaceStatuses.$*$.[linkStatus]"
+interface_errors:
+  display_name: "Interface Errors"
+  rule_type: "operator"
+  description: "ANTA VerifyInterfaceErrors: no input/output/FCS/alignment/symbol errors on any interface."
+  evaluate_args:
+    params:
+      mode: "is-le"
+      operator_data: 0
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show interfaces counters errors | json"
+      jmespath: "interfaceErrorCounters.$*$.[inErrors, outErrors, frameTooShorts, frameTooLongs, fcsErrors, alignmentErrors, symbolErrors]"
+interface_discards:
+  display_name: "Interface Discards"
+  rule_type: "operator"
+  description: "ANTA VerifyInterfaceDiscards: no discarded packets on any interface."
+  evaluate_args:
+    params:
+      mode: "is-le"
+      operator_data: 0
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show interfaces counters discards | json"
+      jmespath: "interfaces.$*$.[inDiscards, outDiscards]"
+no_errdisabled_interfaces:
+  display_name: "No Err-Disabled Interfaces"
+  rule_type: "operator"
+  description: "ANTA VerifyInterfaceErrDisabled: no interface is in err-disabled state."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show interfaces status errdisabled | json"
+      jmespath: "[{errdisabled: {interfaces: length(keys(interfaceStatuses))}}]"
+port_channels_healthy:
+  display_name: "Port-Channels Healthy"
+  rule_type: "operator"
+  description: "ANTA VerifyPortChannels: no port-channel on the device has inactive member ports (anchored per port-channel; a device without port-channels has nothing to check)."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show port-channel | json"
+      jmespath: "portChannels.$*$.[length(inactivePorts)]"
+no_illegal_lacp:
+  display_name: "No Illegal LACP"
+  rule_type: "operator"
+  description: "ANTA VerifyIllegalLACP: no illegal LACP packets received on any port-channel member."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show lacp counters all-ports | json"
+      jmespath: "[{lacp: {illegal_rx: sum(portChannels.*.interfaces[].*[].illegalRxCount)}}]"
+lldp_neighbors_present:
+  display_name: "LLDP Neighbors Present"
+  rule_type: "operator"
+  description: "ANTA VerifyLLDPNeighbors: every fabric link has an LLDP neighbour (at least 2 Ethernet neighbours: 2 downlinks on spines, 2 uplinks + 2 MLAG links on leafs)."
+  evaluate_args:
+    params:
+      mode: "is-ge"
+      operator_data: 2
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show lldp neighbors | json"
+      jmespath: "[{lldp: {ethernet_neighbors: length(lldpNeighbors[?starts_with(port, 'Ethernet')])}}]"
+# --- MLAG & VXLAN --------------------------------------------------------------------
+mlag_status_active:
+  display_name: "MLAG Status Active"
+  rule_type: "operator"
+  description: "ANTA VerifyMlagStatus: MLAG is active with negotiation connected and peer-link/local interface up. Devices without MLAG (spines) report state disabled with the other fields null, which is accepted."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: ["active", "connected", "up", "disabled", null]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show mlag | json"
+      jmespath: "[{mlag: {state: state, negStatus: negStatus, peerLinkStatus: peerLinkStatus, localIntfStatus: localIntfStatus}}]"
+mlag_interfaces:
+  display_name: "MLAG Interfaces"
+  rule_type: "operator"
+  description: "ANTA VerifyMlagInterfaces: no MLAG port is Inactive or Active-partial."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show mlag | json"
+      jmespath: "[{mlagPorts: {inactive: mlagPorts.Inactive, active_partial: mlagPorts.\"Active-partial\"}}]"
+mlag_config_sanity:
+  display_name: "MLAG Config Sanity"
+  rule_type: "operator"
+  description: "ANTA VerifyMlagConfigSanity: no global or interface MLAG configuration inconsistencies."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show mlag config-sanity | json"
+      jmespath: "[{sanity: {global_inconsistencies: length(keys(globalConfiguration)), interface_inconsistencies: length(keys(interfaceConfiguration))}}]"
+vxlan_config_sanity:
+  display_name: "VXLAN Config Sanity"
+  rule_type: "operator"
+  description: "ANTA VerifyVxlanConfigSanity: no failing VXLAN config-sanity item. Two items are excluded as lab artefacts: 'Flood List' (a single MLAG pair has no remote VTEP) and 'Peer VLAN-VNI' (cEOS-lab reports it not identical on the MLAG secondary although both peers show the same mappings). Devices without a VXLAN interface (spines) have no categories and pass."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show vxlan config-sanity | json"
+      jmespath: "[{vxlan: {failed_items: length(categories.*.items[] | [?checkPass == `false` && name != 'Flood List' && name != 'Peer VLAN-VNI'])}}]"
+# --- System --------------------------------------------------------------------------
+ntp_synchronised:
+  display_name: "NTP Synchronised"
+  rule_type: "regex"
+  description: "ANTA VerifyNTP: the clock is synchronised. Expected to fail in the lab (no NTP reachability); ANTA skips it on the twin too."
+  evaluate_args:
+    mode: "match"
+    regex: "^synchronised"
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show ntp status | json"
+      jmespath: "[{ntp: {status: status}}]"
+no_running_startup_diff:
+  display_name: "No Running/Startup Diff"
+  rule_type: "operator"
+  description: "ANTA VerifyRunningConfigDiffs: running-config equals startup-config (parsed with the Git-served TextFSM template parsers/arista_eos/show_running-config_diffs.textfsm)."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "textfsm"
+      platform: "arista_eos"
+      command: "show running-config diffs"
+      jmespath: "[{diff: {lines: length(@)}}]"
+no_agent_crash_logs:
+  display_name: "No Agent Crash Logs"
+  rule_type: "operator"
+  description: "ANTA VerifyAgentLogs: no agent has crashed (parsed with the Git-served TextFSM template parsers/arista_eos/show_agent_logs_crash.textfsm)."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "textfsm"
+      platform: "arista_eos"
+      command: "show agent logs crash"
+      jmespath: "[{crash: {lines: length(@)}}]"
+no_coredumps:
+  display_name: "No Coredumps"
+  rule_type: "operator"
+  description: "ANTA VerifyCoredump: no core dump files present."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show system coredump | json"
+      jmespath: "[{coredump: {files: length(coreFiles)}}]"
+clean_reload_cause:
+  display_name: "Clean Reload Cause"
+  rule_type: "operator"
+  description: "ANTA VerifyReloadCause: no recorded reload cause other than a user-requested reload (a device that never reloaded has none)."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show reload cause | json"
+      jmespath: "[{reload: {unexpected_causes: length(resetCauses[?description != 'Reload requested by the user.' && description != 'Reload requested after FPGA upgrade'])}}]"
+memory_free:
+  display_name: "Memory Free"
+  rule_type: "operator"
+  description: "ANTA VerifyMemoryUtilization (lab variant): more than 2 GB (2,000,000 kB) of memory is free. jdiff cannot compute a percentage, so the threshold is absolute."
+  evaluate_args:
+    params:
+      mode: "is-gt"
+      operator_data: 2000000
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show version | json"
+      jmespath: "[{memory: {free_kb: memFree}}]"
+no_stp_bpdu_errors:
+  display_name: "No STP BPDU Errors"
+  rule_type: "operator"
+  description: "ANTA VerifySTPCounters: no BPDU tagged or other errors on any interface."
+  evaluate_args:
+    params:
+      mode: "is-in"
+      operator_data: [0]
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show spanning-tree counters | json"
+      jmespath: "[{stp: {bpdu_errors: sum(interfaces.*.[bpduTaggedError, bpduOtherError][])}}]"
+zerotouch_disabled:
+  display_name: "ZeroTouch Disabled"
+  rule_type: "regex"
+  description: "ANTA VerifyZeroTouch: ZeroTouch provisioning is disabled."
+  evaluate_args:
+    mode: "match"
+    regex: "^disabled$"
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show zerotouch | json"
+      jmespath: "[{zerotouch: {mode: mode}}]"
+eapi_enabled:
+  display_name: "eAPI Enabled"
+  rule_type: "parameter_match"
+  description: "ANTA VerifyAPIHttpsSSL (lab variant): the eAPI server is enabled. The lab runs http, so the SSL-profile part is not asserted."
+  evaluate_args:
+    mode: "match"
+    params:
+      enabled: true
+  collectors:
+    - name: "json"
+      platform: "arista_eos"
+      command: "show management api http-commands | json"
+      jmespath: "[{eapi: {enabled: enabled}}]"
