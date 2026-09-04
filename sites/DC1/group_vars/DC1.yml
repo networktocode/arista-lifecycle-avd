@@ -1,3 +1,4 @@
 ---
 fabric_name: DC1
 dc_name: DC1
+mgmt_gateway: 192.168.0.1

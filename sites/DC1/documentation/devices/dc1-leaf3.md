@@ -40,6 +40,7 @@
   - [Virtual Router MAC Address](#virtual-router-mac-address)
   - [IP Routing](#ip-routing)
   - [IPv6 Routing](#ipv6-routing)
+  - [Static Routes](#static-routes)
   - [Router BGP](#router-bgp)
 - [BFD](#bfd)
   - [Router BFD](#router-bfd)
@@ -71,7 +72,7 @@ EOF
 
 | Management Interface | Description | Type | VRF | IP Address | Gateway |
 | -------------------- | ----------- | ---- | --- | ---------- | ------- |
-| Management1 | OOB_MANAGEMENT | oob | MGMT | 192.168.0.14/24 | - |
+| Management1 | OOB_MANAGEMENT | oob | MGMT | 192.168.0.14/24 | 192.168.0.1 |
 
 ##### IPv6
 
@@ -703,6 +704,21 @@ ip routing vrf RED
 | GREEN | false |
 | MGMT | false |
 | RED | false |
+
+### Static Routes
+
+#### Static Routes Summary
+
+| VRF | Destination Prefix | Next Hop IP | Exit interface | Administrative Distance | Tag | Route Name | Metric |
+| --- | ------------------ | ----------- | -------------- | ----------------------- | --- | ---------- | ------ |
+| MGMT | 0.0.0.0/0 | 192.168.0.1 | - | 1 | - | - | - |
+
+#### Static Routes Device Configuration
+
+```eos
+!
+ip route vrf MGMT 0.0.0.0/0 192.168.0.1
+```
 
 ### Router BGP
 
