@@ -3,4 +3,3 @@ network_services_keys:
   - name: tenants
   - name: BLUE
   - name: GREEN
-  - name: RED
