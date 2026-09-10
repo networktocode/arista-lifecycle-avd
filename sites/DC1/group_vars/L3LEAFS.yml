@@ -25,7 +25,6 @@ l3leaf:
         tenants:
           - BLUE
           - GREEN
-          - RED
         tags:
           - DC1
       nodes:
@@ -47,7 +46,6 @@ l3leaf:
         tenants:
           - BLUE
           - GREEN
-          - RED
         tags:
           - DC1
       nodes:
