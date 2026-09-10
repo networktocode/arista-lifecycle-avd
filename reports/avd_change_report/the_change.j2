@@ -23,7 +23,7 @@ The change is bracketed by two Operational Compliance snapshots. **{{ who }}** c
 | Device | Role | Rack | Model | Management IP |
 | --- | --- | --- | --- | --- |
 {% for d in devices | sort(attribute='name') if d.name in dev_names -%}
-| {{ d.name }} | {{ d.role.name if d.role else '—' }} | {{ d.rack.name if d.rack else '—' }} | {{ d.device_type.model if d.device_type else '—' }} | {{ d.primary_ip4.address if d.primary_ip4 else '—' }} |
+| {{ d.name }} | {{ d.role.name if d.role else '-' }} | {{ d.rack.name if d.rack else '-' }} | {{ d.device_type.model if d.device_type else '-' }} | {{ d.primary_ip4.address if d.primary_ip4 else '-' }} |
 {% endfor %}
 {% set others = scoped.filter(pre__isnull=False).exclude(job=latest.job).values('job', 'pre__snapshot__name', 'post__snapshot__name').annotate(n=Count('pk'), failed=Count('pk', filter=Q(match='FAIL')), when=Max('date')).order_by('-when') %}
 {% set others_list = others | list %}
@@ -33,7 +33,7 @@ The change is bracketed by two Operational Compliance snapshots. **{{ who }}** c
 {% if n_others == 0 -%}
 This was the only comparison in the window.
 {% else -%}
-**{{ n_others }} other comparison{{ 's' if n_others != 1 }}** {{ 'was' if n_others == 1 else 'were' }} run in the window; this report describes the newest one. Across the whole window that is **{{ n_others + 1 }} comparisons** and **{{ period_checks }} before/after checks**, of which **{{ period_failed }} failed**{% if period_failed == 0 %} — every change in the period left the fabric as it found it{% endif %}.
+**{{ n_others }} other comparison{{ 's' if n_others != 1 }}** {{ 'was' if n_others == 1 else 'were' }} run in the window; this report describes the newest one. Across the whole window that is **{{ n_others + 1 }} comparisons** and **{{ period_checks }} before/after checks**, of which **{{ period_failed }} failed**{% if period_failed == 0 %}; every change in the period left the fabric as it found it{% endif %}.
 
 | When (UTC) | Before | After | Checks | Failed |
 | --- | --- | --- | --: | --: |
