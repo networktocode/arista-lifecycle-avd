@@ -1,24 +1,103 @@
-{#- Turn a jdiff diff into sentences. Leaves: {new_value, old_value} -> "was X, now Y"; "new"/"missing" -> added/removed. -#}
-{% macro humanize(node, path='') -%}
-{%- if node is mapping -%}
-{%- if 'new_value' in node and 'old_value' in node -%}
-- `{{ path }}`: was **{{ node.old_value }}**, now **{{ node.new_value }}**
-{% elif 'error' in node and node | length == 1 -%}
-- evaluation error: {{ node.error }}
-{% else -%}
-{%- for k, v in node.items() if k not in ('new_value', 'old_value') -%}
-{{ humanize(v, (path ~ '.' ~ k) if path else k) }}
-{%- endfor -%}
+{#- Walk a jdiff diff and emit one "|"-separated entry per changed leaf: the field path, plus its before/after
+    values when both are short scalars. Values that are dicts or long strings are left out on purpose. -#}
+{% macro fields(node, path='') -%}
+{%- if node is mapping and ('new_value' in node or 'old_value' in node) -%}
+{%- set ov = node.get('old_value') %}{% set nv = node.get('new_value') -%}
+{%- set scalar = (ov is string or ov is number or ov is boolean or ov is none) and (nv is string or nv is number or nv is boolean or nv is none) -%}
+{%- if scalar and ((ov | string | length) + (nv | string | length)) <= 60 -%}
+{{ path }} was {{ ov }}, now {{ nv }}|
+{%- else -%}
+{{ path }}|
+{%- endif -%}
+{%- elif node is mapping -%}
+{%- if 'error' in node and node | length == 1 -%}
+evaluation error: {{ node.error }}|
+{%- else -%}
+{%- for k, v in node.items() %}{{ fields(v, (path ~ '.' ~ k) if path else k) }}{% endfor -%}
 {%- endif -%}
 {%- elif node == 'new' -%}
-- `{{ path }}`: **added** since the before snapshot
-{% elif node == 'missing' -%}
-- `{{ path }}`: **removed** since the before snapshot
-{% elif node is iterable and node is not string -%}
-{%- for item in node %}{{ humanize(item, path) }}{% endfor -%}
+{{ path }} added|
+{%- elif node == 'missing' -%}
+{{ path }} removed|
+{%- elif node is string -%}
+{{ path }} {{ node }}|
+{%- elif node is iterable -%}
+{%- for item in node %}{{ fields(item, path) }}{% endfor -%}
 {%- else -%}
-- `{{ path }}`: {{ node }}
-{% endif -%}
+{{ path }}|
+{%- endif -%}
+{%- endmacro %}
+{#- BGP Session State: index_element carries the whole "show bgp summary" shape, or {'errors': [...]} when BGP was down. -#}
+{% macro bgp_brief(node) -%}
+{%- set new = node.get('new_value') if node.get('new_value') is mapping else {} -%}
+{%- set old = node.get('old_value') if node.get('old_value') is mapping else {} -%}
+{%- set b = namespace(n=0, est=0, vrfs=[], on=0) -%}
+{%- for vrf, vdata in (new.get('vrfs') or {}).items() -%}
+{%- set _ = b.vrfs.append(vrf) -%}
+{%- for ip, peer in ((vdata.get('peers') if vdata is mapping else {}) or {}).items() -%}
+{%- set b.n = b.n + 1 -%}
+{%- if (peer.get('peerState') if peer is mapping else '') == 'Established' %}{% set b.est = b.est + 1 %}{% endif -%}
+{%- endfor -%}
+{%- endfor -%}
+{%- for vrf, vdata in (old.get('vrfs') or {}).items() -%}
+{%- for ip, peer in ((vdata.get('peers') if vdata is mapping else {}) or {}).items() %}{% set b.on = b.on + 1 %}{% endfor -%}
+{%- endfor -%}
+{%- set after = 'no peers at all' if b.n == 0 else (b.n ~ ' peer' ~ ('s' if b.n != 1 else '') ~ (' Established' if b.est == b.n else ' (' ~ b.est ~ ' Established, ' ~ (b.n - b.est) ~ ' not)')) -%}
+{%- set where = (' across VRF' ~ ('s' if b.vrfs | length != 1 else '') ~ ' ' ~ (b.vrfs | sort(case_sensitive=True) | join(', '))) if b.vrfs else '' -%}
+{%- if old.get('errors') -%}
+BGP was {{ old.errors | join('; ') | lower | replace('bgp ', '') }}; now {{ after }}{{ where }}
+{%- elif b.on or b.n -%}
+{{ b.on }} peer{{ 's' if b.on != 1 }} before, now {{ after }}{{ where }}
+{%- else -%}
+BGP session state changed
+{%- endif -%}
+{%- endmacro %}
+{#- Interface Health: get_interfaces maps interface -> {is_up, is_enabled}, either as a whole before/after pair
+    or as per-interface "new"/"missing" markers. -#}
+{% macro interface_brief(node) -%}
+{%- if node is mapping and ('new_value' in node or 'old_value' in node) -%}
+{%- set new = node.get('new_value') if node.get('new_value') is mapping else {} -%}
+{%- set old = node.get('old_value') if node.get('old_value') is mapping else {} -%}
+{%- set i = namespace(down=[]) -%}
+{%- for iname, idata in new.items() if not (idata.get('is_up') if idata is mapping else True) -%}
+{%- set _ = i.down.append(iname) -%}
+{%- endfor -%}
+{{ old | length }} interface{{ 's' if old | length != 1 }} before, {{ new | length }} after{% if i.down %}; {{ i.down | length }} down ({{ i.down | sort | join(', ') }}){% else %}; all up{% endif %}
+{%- elif node is mapping -%}
+{%- set i = namespace(added=[], removed=[], other=[]) -%}
+{%- for iname, idata in node.items() -%}
+{%- if idata == 'new' %}{% set _ = i.added.append(iname) %}{% elif idata == 'missing' %}{% set _ = i.removed.append(iname) %}{% else %}{% set _ = i.other.append(iname) %}{% endif -%}
+{%- endfor -%}
+{%- if i.added %}{{ i.added | sort | join(', ') }} added{% endif %}{% if i.added and (i.removed or i.other) %}; {% endif %}{% if i.removed %}{{ i.removed | sort | join(', ') }} removed{% endif %}{% if i.removed and i.other %}; {% endif %}{% if i.other %}{{ i.other | length }} interface{{ 's' if i.other | length != 1 }} changed ({{ i.other | sort | join(', ') }}){% endif %}
+{%- else -%}
+interface state changed
+{%- endif -%}
+{%- endmacro %}
+{#- One short sentence per check, in the language of the rule that produced it. -#}
+{% macro brief(rule, diff) -%}
+{%- if not diff -%}
+no difference recorded
+{%- elif diff is not mapping -%}
+{%- set items = (fields(diff) | trim).split('|') | select | list -%}
+{{ items | length }} field{{ 's' if items | length != 1 }} changed: {{ items[:4] | join('; ') }}{% if items | length > 4 %}; and {{ items | length - 4 }} more{% endif %}
+{%- elif 'error' in diff and diff | length == 1 -%}
+evaluation error: {{ diff.error }}
+{%- elif rule == 'BGP Session State' and diff.get('index_element') is mapping -%}
+{{ bgp_brief(diff.index_element) }}
+{%- elif rule == 'Interface Health' and diff.get('get_interfaces') is mapping -%}
+{{ interface_brief(diff.get_interfaces) }}
+{%- elif rule == 'MLAG State' and diff.get('state') is mapping and 'new_value' in diff.state -%}
+MLAG {{ diff.state.old_value }}, now {{ diff.state.new_value }}
+{%- elif rule == 'Route Count' and (diff.get('routes') or {}).get('total') is mapping -%}
+routes {{ diff.routes.total.old_value }}, now {{ diff.routes.total.new_value }}
+{%- else -%}
+{%- set items = (fields(diff) | trim).split('|') | select | list -%}
+{%- if items -%}
+{{ items | length }} field{{ 's' if items | length != 1 }} changed: {{ items[:4] | join('; ') }}{% if items | length > 4 %}; and {{ items | length - 4 }} more{% endif %}
+{%- else -%}
+no difference recorded
+{%- endif -%}
+{%- endif -%}
 {%- endmacro %}
 {% if results is none %}
 > ⚠️ **Data source unavailable.** The Operational Compliance results saved view could not be loaded.
@@ -50,7 +129,7 @@ There is no before/after comparison in the reporting period, so there is nothing
 {% for d in devs %}
 {% for r in two_rules %}{% set x = ns.two.get(d ~ '|' ~ r) %}
 {% set o = 'unknown' if (not x or x.match == 'UNKNOWN') else ('changed' if x.match == 'FAIL' else 'ok') %}
-{% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r, 'Other'), 'type': 'before vs. after', 'before': '—', 'after': '—', 'outcome': o, 'x': x}) %}{% endfor %}
+{% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r, 'Other'), 'type': 'before vs. after', 'before': 'n/a', 'after': 'n/a', 'outcome': o, 'x': x}) %}{% endfor %}
 {% for r in one_rules %}{% set xb = ns.b.get(d ~ '|' ~ r) %}{% set xa = ns.a.get(d ~ '|' ~ r) %}{% set mb = xb.match if xb else None %}{% set ma = xa.match if xa else None %}
 {% set o = 'unknown' if (ma == 'UNKNOWN' or mb == 'UNKNOWN' or not xa or not xb) else ('ok' if (mb == 'PASS' and ma == 'PASS') else ('regressed' if (mb == 'PASS' and ma == 'FAIL') else ('fixed' if (mb == 'FAIL' and ma == 'PASS') else 'preexisting'))) %}
 {% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r, 'System'), 'type': 'absolute', 'before': (mb or 'not run'), 'after': (ma or 'not run'), 'outcome': o, 'x': xa or xb}) %}{% endfor %}
@@ -72,14 +151,16 @@ Every rule was evaluated on the **before** snapshot (*{{ pre.name }}*) and the *
 
 ### Summary totals
 
-| Total checks | ✅ OK | ⚠️ Changed / regressed | 🔧 Fixed | ❌ Pre-existing | ❔ Inconclusive |
-| :- | :- | :- | :- | :- | :- |
+Columns: **OK** ✅ passed, **Changed** ⚠️ differs before vs. after or regressed, **Fixed** 🔧 healthy again after the change, **Pre-existing** ❌ failed in both snapshots, **Unclear** ❔ could not be judged.
+
+| Total checks | OK | Changed | Fixed | Pre-existing | Unclear |
+| :- | -: | -: | -: | -: | -: |
 | {{ total }} | {{ nok }} | {{ nchg + nreg }} | {{ nfix }} | {{ npre }} | {{ nunk }} |
 
 ### Summary totals per device
 
-| Device | Total | ✅ OK | ⚠️ Changed / regressed | 🔧 Fixed | ❌ Pre-existing | ❔ Inconclusive | Areas affected |
-| :- | :- | :- | :- | :- | :- | :- | :- |
+| Device | Total | OK | Changed | Fixed | Pre-existing | Unclear | Areas affected |
+| :- | -: | -: | -: | -: | -: | -: | :- |
 {% for d in devs -%}
 {%- set dc = ns.cells | selectattr('device', 'equalto', d) | list -%}
 {%- set bad = dc | rejectattr('outcome', 'in', ['ok', 'fixed', 'preexisting']) | map(attribute='area') | unique | sort | list -%}
@@ -87,24 +168,24 @@ Every rule was evaluated on the **before** snapshot (*{{ pre.name }}*) and the *
 {% endfor %}
 ### Summary totals per area
 
-| Area | Total | ✅ OK | ⚠️ Changed / regressed | 🔧 Fixed | ❌ Pre-existing | ❔ Inconclusive |
-| :- | :- | :- | :- | :- | :- | :- |
+| Area | Total | OK | Changed | Fixed | Pre-existing | Unclear |
+| :- | -: | -: | -: | -: | -: | -: |
 {% for ar in ns.cells | map(attribute='area') | unique | sort -%}
 {%- set ac = ns.cells | selectattr('area', 'equalto', ar) | list -%}
 | **{{ ar }}** | {{ ac | length }} | {{ count(ac, 'ok') }} | {{ (count(ac, 'changed') | int) + (count(ac, 'regressed') | int) }} | {{ count(ac, 'fixed') }} | {{ count(ac, 'preexisting') }} | {{ count(ac, 'unknown') }} |
 {% endfor %}
 ### Detailed results
 
-Legend: **before vs. after** rules report *OK* (unchanged) or *Changed*; **absolute** rules show the verdict before → after: *OK* (passed both times), *Regressed* (passed before, fails after), *Fixed* (failed before, passes after), *Pre-existing* (failed both times).
+Legend: **before vs. after** rules report *OK* (unchanged) or *Changed*; **absolute** rules were judged in each snapshot, and the outcome carries the verdict before → after: *OK* (passed both times), *Regressed* (passed before, fails after), *Fixed* (failed before, passes after), *Pre-existing* (failed both times).
 
 {% for d in devs %}
 #### {{ d }}
 
-| Area | Rule | Type | Before | After | Outcome | Details |
-| :- | :- | :- | :- | :- | :- | :- |
+| Area | Rule | Type | Outcome | Details |
+| :- | :- | :- | :- | :- |
 {% for c in ns.cells | selectattr('device', 'equalto', d) | sort(attribute='area') -%}
-{%- set detail = (humanize(c.x.diff) | replace('\n', ' ') | replace('- ', '') | replace('|', '/') | trim) if (c.x and c.x.diff and c.outcome not in ['ok']) else '-' -%}
-| {{ c.area }} | {{ c.rule }} | {{ c.type }} | {{ c.before }} | {{ c.after }} | {{ icon[c.outcome] }} {{ label[c.outcome] }} | {{ detail[:300] }}{% if detail | length > 300 %}…{% endif %} |
+{%- set detail = (brief(c.rule, c.x.diff) | replace('\n', ' ') | replace('|', '/') | trim) if (c.x and c.x.diff and c.outcome not in ['ok']) else '-' -%}
+| {{ c.area }} | {{ c.rule }} | {{ c.type }} | {{ icon[c.outcome] }} {{ label[c.outcome] }}{% if c.type == 'absolute' %} ({{ c.before }} → {{ c.after }}){% endif %} | {{ detail[:220] }}{% if detail | length > 220 %}…{% endif %} |
 {% endfor %}
 
 {% endfor %}
@@ -115,7 +196,8 @@ Legend: **before vs. after** rules report *OK* (unchanged) or *Changed*; **absol
 {% for c in findings | sort(attribute='device') -%}
 **{{ icon[c.outcome] }} {{ label[c.outcome] }} — {{ c.rule }} on {{ c.device }}** — {{ c.x.post.validation_rule.description if c.x else '' }}
 
-{% if c.x and c.x.diff %}{{ humanize(c.x.diff) }}
+{% if c.x and c.x.diff %}{{ brief(c.rule, c.x.diff) }}
+
 <details><summary>Detailed diff (jdiff output)</summary>
 
 ```
