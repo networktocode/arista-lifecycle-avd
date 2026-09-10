@@ -3,8 +3,9 @@
 {% else -%}
 {% set devices = (gql_fabric.devices if gql_fabric else []) or [] %}
 {% set ndev = devices | length %}
+{% set leaf_roles = ['l3leaf', 'l2leaf', 'leaf'] %}
 {% set nspine = devices | selectattr('role.name', 'equalto', 'spine') | list | length %}
-{% set nleaf = devices | selectattr('role.name', 'equalto', 'leaf') | list | length %}
+{% set nleaf = devices | selectattr('role.name', 'in', leaf_roles) | list | length %}
 {% set loc = (devices | map(attribute='location.name') | unique | list) %}
 {% set scoped = results.filter(post__device__tags__name='avd', date__gte=reporting_period_start_date) %}
 {% set latest = scoped.filter(pre__isnull=False).order_by('-date').first() %}
@@ -21,12 +22,12 @@ No snapshot comparison was taken for the **{{ ndev }} AVD device{{ 's' if ndev !
 {% set av_fail_rows = one_sided.filter(match='FAIL') %}
 {% set ns = namespace(known=0, real=0, real_names=[]) %}
 {% for r in av_fail_rows -%}
-{% if r.post.validation_rule.name == 'NTP Synchronised' or (r.post.validation_rule.name == 'MLAG Interfaces' and r.post.device.role.name == 'leaf') %}{% set ns.known = ns.known + 1 %}{% else %}{% set ns.real = ns.real + 1 %}{% set _ = ns.real_names.append(r.post.validation_rule.name ~ ' on ' ~ r.post.device.name) %}{% endif %}
+{% if r.post.validation_rule.name == 'NTP Synchronised' or (r.post.validation_rule.name == 'MLAG Interfaces' and r.post.device.role.name in leaf_roles) %}{% set ns.known = ns.known + 1 %}{% else %}{% set ns.real = ns.real + 1 %}{% set _ = ns.real_names.append(r.post.validation_rule.name ~ ' on ' ~ r.post.device.name) %}{% endif %}
 {%- endfor %}
 {% set who = latest.job.user.username if latest.job.user else 'an automated job' %}
 This change touched **{{ changed_devices | length }} device{{ 's' if changed_devices | length != 1 }}** at **{{ loc | join(', ') or 'DC1' }}** ({{ nspine }} spine{{ 's' if nspine != 1 }}, {{ nleaf }} leaf{{ 's' if nleaf != 1 }} in the fabric) between **{{ pre.created.strftime('%H:%M') }}** and **{{ post.created.strftime('%H:%M UTC on %-d %b %Y') }}**. The before snapshot was *{{ pre.name }}* and the after snapshot *{{ post.name }}*; the comparison was run by **{{ who }}**.
 
-Of the **{{ cw_total }} change-window check{{ 's' if cw_total != 1 }}** (before vs. after), **{{ cw_total - cw_fail - cw_unknown }} passed**{% if cw_fail %} and **{{ cw_fail }} failed**{% endif %}{% if cw_unknown %}, with **{{ cw_unknown }} inconclusive**{% endif %}.{% if cw_fail %} What changed: {% for r in cmp.filter(match='FAIL').order_by('post__device__name') %}*{{ r.post.validation_rule.name }}* on {{ r.post.device.name }}{{ ', ' if not loop.last }}{% endfor %}.{% else %} Nothing that was healthy before the change is unhealthy after it.{% endif %}
+Of the **{{ cw_total }} change-window check{{ 's' if cw_total != 1 }}** (before vs. after), **{{ cw_total - cw_fail - cw_unknown }} passed**{% if cw_fail %} and **{{ cw_fail }} failed**{% endif %}{% if cw_unknown %}, with **{{ cw_unknown }} inconclusive**{% endif %}.{% if cw_fail %}{% set fail_rows = cmp.filter(match='FAIL').order_by('post__device__name') | list %} What changed: {% for rule in fail_rows | map(attribute='post.validation_rule.name') | unique | sort %}{% set rule_devs = fail_rows | selectattr('post.validation_rule.name', 'equalto', rule) | map(attribute='post.device.name') | unique | sort | list %}*{{ rule }}* on {{ rule_devs | length }} device{{ 's' if rule_devs | length != 1 }} ({{ rule_devs | join(', ') }}){{ '; ' if not loop.last }}{% endfor %}.{% else %} Nothing that was healthy before the change is unhealthy after it.{% endif %}
 
 {% set before_rows = results.filter(post__snapshot=pre, pre__isnull=True) %}{% set bm = {} %}{% for r in before_rows %}{% set _ = bm.update({r.post.device.name ~ '|' ~ r.post.validation_rule.name: r.match}) %}{% endfor %}{% set ab = namespace(reg=0, fixed=0, pre=0, both=0, reg_names=[]) %}{% for r in one_sided %}{% set mb = bm.get(r.post.device.name ~ '|' ~ r.post.validation_rule.name) %}{% if mb == 'PASS' and r.match == 'FAIL' %}{% set ab.reg = ab.reg + 1 %}{% set _ = ab.reg_names.append(r.post.validation_rule.name ~ ' on ' ~ r.post.device.name) %}{% elif mb == 'FAIL' and r.match == 'PASS' %}{% set ab.fixed = ab.fixed + 1 %}{% elif mb == 'FAIL' and r.match == 'FAIL' %}{% set ab.pre = ab.pre + 1 %}{% elif r.match == 'PASS' %}{% set ab.both = ab.both + 1 %}{% endif %}{% endfor %}The **{{ av_total }} absolute check{{ 's' if av_total != 1 }}** were judged before and after the change: **{{ ab.both }} passed both times**, {% if ab.reg %}**{{ ab.reg }} regressed** ({{ ab.reg_names | join(', ') }}){% else %}**none regressed**{% endif %}{% if ab.fixed %}, **{{ ab.fixed }} {{ 'was' if ab.fixed == 1 else 'were' }} fixed** by the change{% endif %}{% if ab.pre %}, and **{{ ab.pre }}** fail{{ 's' if ab.pre == 1 }} in both snapshots (pre-existing{% if ns.known %}; {{ ns.known }} of {{ 'them is a' if ns.known == 1 else 'these are' }} known lab condition{{ 's' if ns.known != 1 }}: NTP is unreachable from the lab{% endif %}){% endif %}.
 
@@ -35,7 +36,14 @@ Of the **{{ cw_total }} change-window check{{ 's' if cw_total != 1 }}** (before 
 {% for c in ccs %}{% set amp.intent = amp.intent + ((c.data | tojson(indent=2)).splitlines() | length) %}{% endfor %}
 {% for d in devices %}{% set avd = (d.local_config_context_data or {}).get('avd') %}{% if avd %}{% set amp.intent = amp.intent + ((avd | tojson(indent=2)).splitlines() | length) %}{% endif %}{% endfor %}
 {% if gc is not none %}{% for g in gc.filter(device__tags__name='avd') %}{% if g.backup_config %}{% set amp.config = amp.config + (g.backup_config.splitlines() | length) %}{% endif %}{% endfor %}{% endif %}
-{% if amp.intent and amp.config -%}
+{#- Measured figures published by the Import Validation Results job onto the fabric Location, if it has run. -#}
+{% set cfns = namespace(cf={}) %}
+{% for d in devices %}{% set lcf = (d.location or {}).get('_custom_field_data') or {} %}{% if lcf.get('intent_lines') and not cfns.cf %}{% set cfns.cf = lcf %}{% endif %}{% endfor %}
+{% set cf_intent = cfns.cf.get('intent_lines') %}{% set cf_config = cfns.cf.get('config_lines') %}
+{% set cf_amp = cfns.cf.get('amplification') or (((cf_config / cf_intent) | round(0) | int) ~ 'x' if cf_intent and cf_config else none) %}
+{% if cf_intent and cf_config -%}
+Intent for this fabric: **{{ cf_intent }} lines** of AVD inputs rendered from Nautobot. Configuration: **{{ cf_config }} lines** of intended EOS configuration that AVD built from them for the {{ ndev }} device{{ 's' if ndev != 1 }}{% if cf_amp %}, a **{{ cf_amp }}** amplification{% endif %}.
+{% elif amp.intent and amp.config -%}
 Intent for this fabric: **{{ amp.intent }} lines** of structured data in Nautobot (the two AVD config contexts plus each device's AVD facts). Rendered configuration: **{{ amp.config }} lines** of EOS configuration across the {{ ndev }} device{{ 's' if ndev != 1 }} (latest Golden Config backups).
 {% elif amp.intent -%}
 Intent for this fabric is **{{ amp.intent }} lines** of structured data in Nautobot; no configuration backup is available yet to measure the rendered side.

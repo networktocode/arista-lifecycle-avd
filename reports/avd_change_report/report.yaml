@@ -95,5 +95,6 @@ blocks:
   heading_level: h2
   content: This report reads live data from Nautobot. "The change" is the most recent Operational Compliance snapshot comparison
     taken within the reporting period for the AVD devices; its before/after results and the validation results of the after-snapshot
-    make up the check sections. Device facts, interfaces and the AVD settings come from the Nautobot source of truth; configuration
-    line counts come from the latest Golden Configuration backup of each device. Nothing here is typed by hand.
+    make up the check sections. Device facts, interfaces and the AVD settings come from the Nautobot source of truth; the intent
+    and configuration line counts are the ones the Import Validation Results job measured when it rendered the fabric, and fall
+    back to the latest Golden Configuration backup of each device. Nothing here is typed by hand.

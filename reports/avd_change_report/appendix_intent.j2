@@ -1,9 +1,23 @@
+{#- Render JSON the way tojson(indent=2) would, but replace the value of any password, secret, key or token
+    field with <redacted>. Recurses through nested dicts and lists; every scalar still goes through tojson. -#}
+{% macro rjson(node, pad='') -%}
+{%- set nl = '\n' %}{% set ind = pad ~ '  ' -%}
+{%- if node is mapping -%}
+{%- if not node -%}{{ '{}' }}{% else %}{{ '{' }}{% for k, v in node.items() %}{{ nl }}{{ ind }}{{ k | string | tojson }}: {% if 'password' in (k | string | lower) or 'secret' in (k | string | lower) or 'key' in (k | string | lower) or 'token' in (k | string | lower) %}"<redacted>"{% else %}{{ rjson(v, ind) }}{% endif %}{{ ',' if not loop.last }}{% endfor %}{{ nl }}{{ pad }}{{ '}' }}{% endif -%}
+{%- elif node is string -%}
+{{ node | tojson }}
+{%- elif node is iterable -%}
+{%- if not node -%}[]{% else %}[{% for item in node %}{{ nl }}{{ ind }}{{ rjson(item, ind) }}{{ ',' if not loop.last }}{% endfor %}{{ nl }}{{ pad }}]{% endif -%}
+{%- else -%}
+{{ node | tojson }}
+{%- endif -%}
+{%- endmacro %}
 {% if gql_fabric is none or gql_cc is none %}
 > ⚠️ **Data source unavailable.** This appendix needs the device intent and the AVD config contexts (GraphQL).
 {% else -%}
 {% set devices = ((gql_fabric.devices if gql_fabric else []) or []) | sort(attribute='name') %}
 {% set ccs = ((gql_cc.config_contexts if gql_cc else []) or []) %}
-This is the intent AVD renders from: the shared fabric and management settings, then each device's node facts. It is shown exactly as Nautobot stores it.
+This is the intent AVD renders from: the shared fabric and management settings, then each device's node facts. It is shown exactly as Nautobot stores it, except that the value of any password, secret, key or token field is shown as `<redacted>`.
 {% for c in ccs %}
 
 ## {{ c.name }}
@@ -11,7 +25,7 @@ This is the intent AVD renders from: the shared fabric and management settings, 
 {{ c.description }}
 
 ```json
-{{ c.data | tojson(indent=2) }}
+{{ rjson(c.data) }}
 ```
 {% endfor %}
 {% for d in devices %}
@@ -21,7 +35,7 @@ This is the intent AVD renders from: the shared fabric and management settings, 
 {% set avd = (d.local_config_context_data or {}).get('avd') %}
 {% if avd %}
 ```json
-{{ avd | tojson(indent=2) }}
+{{ rjson(avd) }}
 ```
 {% else %}
 No per-device AVD facts recorded.
