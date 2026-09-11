@@ -1,4 +1,4 @@
-"""AVD Prep: install the "AVD Change Report" Reports-app template from this repository.
+"""Load AVD Change Report: install the "AVD Change Report" Reports-app template from this repository.
 
 Load this repository into Nautobot as a Git Repository with the "jobs" provided content; the job then reads the
 report definition from the checkout's own `reports/avd_change_report/` directory (report.yaml, Jinja blocks,
@@ -12,7 +12,7 @@ from nautobot.apps.jobs import BooleanVar, Job
 from nautobot_reports.models import ReportTemplate
 from nautobot_reports.report_import import ReportTemplateImporter
 
-name = "AVD Prep"  # module-level `name` is what Nautobot shows as the job grouping in the UI
+name = "Arista Lifecycle Workshop"  # module-level `name` is what Nautobot shows as the job grouping in the UI
 
 REPORT_NAME = "avd_change_report"
 REPORTS_DIR = Path(__file__).resolve().parents[1] / "reports"  # <repo>/reports
