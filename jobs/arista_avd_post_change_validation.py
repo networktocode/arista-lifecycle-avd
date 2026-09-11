@@ -1,4 +1,4 @@
-"""AVD Compliance: the chain to run after a real change on the AVD fabric.
+"""06 Post Change Validation: the chain to run after a real change on the AVD fabric.
 
 Before the change: take an Operational Compliance snapshot (e.g. "CHG-1234 pre") of the AVD devices.
 After the change: run this chain. It takes the post snapshot with exactly the pre snapshot's devices and rules,
@@ -22,7 +22,7 @@ from nautobot_reports.models import PublishedReport, ReportTemplate
 from nautobot_tools.choices import JobChainStepStatusChoices
 from nautobot_tools.job_chaining import ChainingJob
 
-name = "AVD Compliance"  # module-level `name` = job grouping shown in the Nautobot UI
+name = "Arista Lifecycle Workshop"  # module-level `name` = job grouping shown in the Nautobot UI
 
 DEVICE_TAG = "avd"                          # devices of the AVD fabric
 REPORT_TEMPLATE_NAME = "AVD Change Report"  # installed by the "Load AVD Change Report" job
@@ -45,7 +45,7 @@ class PostChangeValidation(ChainingJob):
     publish = BooleanVar(default=True, description="Publish the 'AVD Change Report' for this change.")
 
     class Meta:  # pylint: disable=too-few-public-methods
-        name = "Arista AVD Post Change Validation"
+        name = "06 Post Change Validation"
         description = "Take the post-change snapshot with the pre snapshot's devices and rules, compare the two with Operational Compliance, and publish the AVD Change Report for exactly this change."
         has_sensitive_variables = False
         rollback_on_failure = False
