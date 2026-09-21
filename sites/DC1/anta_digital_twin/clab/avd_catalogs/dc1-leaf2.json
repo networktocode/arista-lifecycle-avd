@@ -180,12 +180,6 @@
           },
           {
             "destination": "10.101.254.0",
-            "description": "dc1-leaf1_Vlan3502",
-            "vrf": "RED",
-            "repeat": 1
-          },
-          {
-            "destination": "10.101.254.0",
             "description": "dc1-leaf1_Vlan4093",
             "vrf": "default",
             "repeat": 1
@@ -291,19 +285,11 @@
             "status": "up"
           },
           {
-            "name": "Vlan300",
-            "status": "up"
-          },
-          {
             "name": "Vlan3500",
             "status": "up"
           },
           {
             "name": "Vlan3501",
-            "status": "up"
-          },
-          {
-            "name": "Vlan3502",
             "status": "up"
           },
           {
@@ -402,10 +388,6 @@
           {
             "peer_address": "10.101.254.0",
             "vrf": "GREEN"
-          },
-          {
-            "peer_address": "10.101.254.0",
-            "vrf": "RED"
           }
         ]
       }

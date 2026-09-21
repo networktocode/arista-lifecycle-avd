@@ -1,27 +1,27 @@
 Device,Test Name,Test Status,Message(s),Test description,Test category
-dc1-leaf1,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 37,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-leaf1,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 115,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-leaf1,VerifyInterfacesStatus,failure,"Interface: Port-Channel1 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-leaf1,VerifyPortChannels,failure,"Interface: Port-Channel1 - Inactive port(s) - Ethernet1, PeerEthernet1",Verifies there are no inactive ports in port channels.,Interfaces
 dc1-leaf1,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
 dc1-leaf1,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-leaf2,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 34,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-leaf2,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 112,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-leaf2,VerifyInterfacesStatus,failure,"Interface: Port-Channel1 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-leaf2,VerifyPortChannels,failure,"Interface: Port-Channel1 - Inactive port(s) - Ethernet1, PeerEthernet1",Verifies there are no inactive ports in port channels.,Interfaces
 dc1-leaf2,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
 dc1-leaf2,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-leaf3,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 37,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-leaf3,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 110,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-leaf3,VerifyInterfacesStatus,failure,"Interface: Port-Channel1 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-leaf3,VerifyPortChannels,failure,"Interface: Port-Channel1 - Inactive port(s) - Ethernet1, PeerEthernet1",Verifies there are no inactive ports in port channels.,Interfaces
 dc1-leaf3,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
 dc1-leaf3,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-leaf4,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 38,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-leaf4,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 110,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-leaf4,VerifyInterfacesStatus,failure,"Interface: Port-Channel1 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-leaf4,VerifyPortChannels,failure,"Interface: Port-Channel1 - Inactive port(s) - Ethernet1, PeerEthernet1",Verifies there are no inactive ports in port channels.,Interfaces
 dc1-leaf4,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
 dc1-leaf4,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-spine1,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 47,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-spine1,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 100,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-spine1,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-spine2,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 42,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-spine2,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 98,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-spine2,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
 dc1-leaf1,VerifyEnvironmentCooling,skipped,VerifyEnvironmentCooling test is not supported on cEOSLab,Verifies the status of power supply fans and all fan trays.,Hardware
 dc1-leaf1,VerifyEnvironmentPower,skipped,VerifyEnvironmentPower test is not supported on cEOSLab,Verifies the power supplies state and input voltage.,Hardware
