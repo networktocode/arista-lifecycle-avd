@@ -5,7 +5,7 @@ provided content **Jobs** (`extras.job`); Nautobot imports this `jobs/` package 
 
 | Grouping | Job | Purpose |
 | --- | --- | --- |
-| Arista Lab Host | Load AVD Change Report | Installs the Reports-app template from `reports/avd_change_report/` in this checkout (idempotent; `overwrite` rebuilds it). |
+| Arista Lab Setup | Load AVD Change Report | Installs the Reports-app template from `reports/avd_change_report/` in this checkout (idempotent; `overwrite` rebuilds it). |
 | Arista Lifecycle Demo | 05 Post Change Validation | After a change: post snapshot with the pre snapshot's devices and rules → Operational Compliance comparison → publish the AVD Change Report. Needs nautobot-operational-compliance, nautobot-reports and nautobot-tools. |
 
 Requires the Nautobot Reports app (and, for the compliance chain, Operational Compliance and nautobot-tools) on the target instance. Enable the job after the first sync.
