@@ -1,12 +1,12 @@
 ---
-# Deploy DC1 to production through CloudVision as a Service when a change lands
-# on main, then validate the fabric with ANTA and commit the report back.
+# Deploy DC1 to production through CloudVision as a Service when a release is
+# published, validate the fabric with ANTA, commit the report to main, and add
+# the results to the release notes.
 name: Deploy & test configurations
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
 
 jobs:
   deploy-prod:
@@ -24,25 +24,17 @@ jobs:
       env:
         PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
     steps:
-      - name: Checkout
+      - name: Checkout the release
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: add the repo to git safe directory
         run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
 
-      - name: Check DC1 paths for AVD variable changes
-        uses: dorny/paths-filter@v4
-        id: filter-dc1
-        with:
-          filters: |
-            workflows:
-              - 'sites/DC1/group_vars/**'
-              - 'sites/_global_vars/**'
-
       - name: Deploy configuration for the DC1 fabric
         id: dc1-deploy
         run: ansible-playbook playbooks/deploy.yml -i sites/DC1/inventory.yml -e 'target=DC1 cv_submit_workspace=true cv_run_change_control=true'
-        if: steps.filter-dc1.outputs.workflows == 'true'
         env:
           CVAAS_SERVER: ${{ secrets.CVAAS_SERVER }}
           CVAAS_TOKEN: ${{ secrets.CVAAS_TOKEN }}
@@ -56,14 +48,18 @@ jobs:
     runs-on: [self-hosted, clab]
     permissions:
       contents: write
+    outputs:
+      anta_outcome: ${{ steps.dc1-validation.outcome }}
     container:
       image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
       options: '--user=root --add-host=host.docker.internal:host-gateway'
       env:
         PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v6
+        with:
+          ref: main
 
       - name: add the repo to git safe directory
         run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
@@ -89,18 +85,86 @@ jobs:
           ANTA_USERNAME: ${{ vars.ANTA_USERNAME || 'anta' }}
           ANTA_PASSWORD: ${{ secrets.ANTA_PASSWORD }}
 
-      - name: commit the test catalogs and report to the repository
+      - name: commit the test catalogs and report to main
         run: |
           if [[ -n $(git status --porcelain) ]]; then
             git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git config --local user.name "github-actions[bot]"
             git add --all
-            git commit -m "Automatic update of the validation report after pipeline execution [skip ci]"
-            git pull --rebase origin "$BRANCH"
-            git push origin HEAD:"$BRANCH"
+            git commit -m "Production validation report for ${TAG} [skip ci]"
+            git pull --rebase origin main
+            git push origin HEAD:main
           else
-            echo "WARNING: No changes were detected. git commit push action aborted."
+            echo "No report changes to commit."
           fi
         shell: bash
         env:
-          BRANCH: ${{ github.ref_name }}
+          TAG: ${{ github.event.release.tag_name }}
+
+  Release-notes:
+    if: ${{ always() }}
+    needs: [deploy-prod, Network-validation]
+    runs-on: [self-hosted, clab]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Add the production results to the release
+        uses: actions/github-script@v7
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          DEPLOY: ${{ needs.deploy-prod.result }}
+          VALIDATION: ${{ needs.Network-validation.outputs.anta_outcome || 'skipped' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { owner, repo } = context.repo;
+            const tag = process.env.TAG;
+
+            const { data: release } = await github.rest.repos.getReleaseByTag({ owner, repo, tag });
+
+            const lines = [
+              release.body || "",
+              "",
+              "## Production",
+              "",
+              `- CloudVision change control: ${process.env.DEPLOY}`,
+              `- Production ANTA run: ${process.env.VALIDATION}`,
+              `- Run: ${process.env.RUN_URL}`,
+            ];
+
+            const reportPath = "sites/DC1/anta/reports/anta_report.md";
+            if (fs.existsSync(reportPath)) {
+              const reportLines = fs.readFileSync(reportPath, "utf8").split("\n");
+              // The table of contents also has a "Summary Totals" bullet; the real
+              // section is the heading line itself, which starts with "#".
+              const start = reportLines.findIndex(
+                (line) => line.trimStart().startsWith("#") && line.includes("Summary Totals")
+              );
+              if (start !== -1) {
+                let i = start + 1;
+                while (i < reportLines.length && reportLines[i].trim() === "") {
+                  i += 1;
+                }
+                const summary = [];
+                while (i < reportLines.length && reportLines[i].trimStart().startsWith("|") && summary.length < 8) {
+                  summary.push(reportLines[i]);
+                  i += 1;
+                }
+                if (summary.length > 0) {
+                  lines.push("", ...summary);
+                }
+              }
+            }
+
+            await github.rest.repos.updateRelease({
+              owner,
+              repo,
+              release_id: release.id,
+              body: lines.join("\n"),
+            });
