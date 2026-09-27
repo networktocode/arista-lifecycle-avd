@@ -1,4 +1,4 @@
-"""05 Post Change Validation: the chain to run after a real change on the AVD fabric.
+"""Post-change validation for a promoted release: the chain to run after a real change on the AVD fabric.
 
 Before the change: take an Operational Compliance snapshot (e.g. "CHG-1234 pre") of the AVD devices.
 After the change: run this chain. It takes the post snapshot with exactly the pre snapshot's devices and rules,
@@ -45,13 +45,14 @@ class PostChangeValidation(ChainingJob):
     publish = BooleanVar(default=True, description="Publish the 'AVD Change Report' for this change.")
 
     class Meta:  # pylint: disable=too-few-public-methods
-        name = "05 Post Change Validation"
+        name = "Promote: Post-Change Validation"
         description = "Take the post-change snapshot with the pre snapshot's devices and rules, compare the two with Operational Compliance, and publish the AVD Change Report for exactly this change."
         has_sensitive_variables = False
         rollback_on_failure = False
         soft_time_limit = 1800
         time_limit = 2100
         steps_to_display = ["Post Snapshot", "Compare", "Publish Report"]
+        hidden = True
 
     # -- stages run as their own JobResults so the comparison job can pair two snapshots and every stage is linkable
     def _execute(self, step_name, job_class, **job_kwargs):
