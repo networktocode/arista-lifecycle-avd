@@ -1,0 +1,90 @@
+---
+name: dc1
+prefix: ''
+mgmt:
+  network: clab_mgmt
+  ipv4-subnet: 192.168.0.0/24
+topology:
+  defaults:
+    env:
+      INTFTYPE: et
+  kinds:
+    ceos:
+      image: arista/ceos:latest
+      startup-config: init-configs/basic.cfg
+    linux:
+      image: ghcr.io/aristanetworks/aclabs/host-ubuntu:rev1.2
+  nodes:
+    dc1-spine1:
+      kind: ceos
+      mgmt-ipv4: 192.168.0.10
+    dc1-spine2:
+      kind: ceos
+      mgmt-ipv4: 192.168.0.11
+    dc1-leaf1:
+      kind: ceos
+      mgmt-ipv4: 192.168.0.12
+    dc1-leaf2:
+      kind: ceos
+      mgmt-ipv4: 192.168.0.13
+    dc1-leaf3:
+      kind: ceos
+      mgmt-ipv4: 192.168.0.14
+    dc1-leaf4:
+      kind: ceos
+      mgmt-ipv4: 192.168.0.15
+    dc1-host1:
+      kind: linux
+      mgmt-ipv4: 192.168.0.50
+    dc1-host2:
+      kind: linux
+      mgmt-ipv4: 192.168.0.51
+  links:
+    - endpoints:
+        - dc1-spine1:et1_1
+        - dc1-leaf1:et49_1
+    - endpoints:
+        - dc1-spine1:et1_2
+        - dc1-leaf2:et49_1
+    - endpoints:
+        - dc1-spine1:et1_3
+        - dc1-leaf3:et49_1
+    - endpoints:
+        - dc1-spine1:et1_4
+        - dc1-leaf4:et49_1
+    - endpoints:
+        - dc1-spine2:et1_1
+        - dc1-leaf1:et50_1
+    - endpoints:
+        - dc1-spine2:et1_2
+        - dc1-leaf2:et50_1
+    - endpoints:
+        - dc1-spine2:et1_3
+        - dc1-leaf3:et50_1
+    - endpoints:
+        - dc1-spine2:et1_4
+        - dc1-leaf4:et50_1
+    - endpoints:
+        - dc1-leaf1:et1
+        - dc1-host1:eth1
+    - endpoints:
+        - dc1-leaf1:et51_1
+        - dc1-leaf2:et51_1
+    - endpoints:
+        - dc1-leaf1:et52_1
+        - dc1-leaf2:et52_1
+    - endpoints:
+        - dc1-leaf2:et1
+        - dc1-host1:eth2
+    - endpoints:
+        - dc1-leaf3:et1
+        - dc1-host2:eth1
+    - endpoints:
+        - dc1-leaf3:et51_1
+        - dc1-leaf4:et51_1
+    - endpoints:
+        - dc1-leaf3:et52_1
+        - dc1-leaf4:et52_1
+    - endpoints:
+        - dc1-leaf4:et1
+        - dc1-host2:eth2
