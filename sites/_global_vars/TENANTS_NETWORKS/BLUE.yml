@@ -1,0 +1,15 @@
+---
+BLUE:
+  - name: BLUE
+    mac_vrf_vni_base: 10000
+    vrfs:
+      - name: BLUE
+        vrf_vni: 501
+        validate_bgp_peers: true
+        svis:
+          - id: 100
+            name: BLUE_VLAN_100
+            tags:
+              - DC1
+            enabled: true
+            ip_address_virtual: 10.10.100.1/24
