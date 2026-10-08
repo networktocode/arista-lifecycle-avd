@@ -2,9 +2,9 @@
 
 Before the change: take an Operational Compliance snapshot (e.g. "CHG-1234 pre") of the AVD devices.
 After the change: run this chain. It takes the post snapshot with exactly the pre snapshot's devices and rules,
-compares the two with the Operational Compliance app, and publishes the "AVD Change Report" so the report is bound
+compares the two with the Operational Compliance app, and publishes the "Change Validation Report" so the report is bound
 to this change. Requires: nautobot-operational-compliance, nautobot-reports, nautobot-tools (ChainingJob), and the
-report template installed by the "Load AVD Change Report" job.
+report template installed by the "Load Change Validation Report" job.
 
 Self-contained on purpose: this module is served from the repository through Nautobot's Git Repository job content.
 """
@@ -25,7 +25,7 @@ from nautobot_tools.job_chaining import ChainingJob
 name = "Arista Lifecycle Demo"  # module-level `name` = job grouping shown in the Nautobot UI
 
 DEVICE_TAG = "avd"                          # devices of the AVD fabric
-REPORT_TEMPLATE_NAME = "AVD Change Report"  # installed by the "Load AVD Change Report" job
+REPORT_TEMPLATE_NAME = "Change Validation Report"  # installed by the "Load Change Validation Report" job
 # Absolute rules that legitimately FAIL on the NTC lab (documented in oc/README.md); excluded from the failure count.
 EXPECTED_LAB_FAILURES = {"NTP Synchronised", "Interface Discards"}
 
@@ -42,11 +42,11 @@ class PostChangeValidation(ChainingJob):
     pre_snapshot = ObjectVar(model=Snapshot, required=False,
                              description="The snapshot taken BEFORE the change. The post snapshot uses exactly its devices and rules. Leave empty to use the most recent snapshot covering the AVD devices.")
     snapshot_name = StringVar(default="", required=False, description="Name for the post-change snapshot. Default: the pre snapshot's name followed by ' post'.")
-    publish = BooleanVar(default=True, description="Publish the 'AVD Change Report' for this change.")
+    publish = BooleanVar(default=True, description="Publish the 'Change Validation Report' for this change.")
 
     class Meta:  # pylint: disable=too-few-public-methods
         name = "Promote: Post-Change Validation"
-        description = "Take the post-change snapshot with the pre snapshot's devices and rules, compare the two with Operational Compliance, and publish the AVD Change Report for exactly this change."
+        description = "Take the post-change snapshot with the pre snapshot's devices and rules, compare the two with Operational Compliance, and publish the Change Validation Report for exactly this change."
         has_sensitive_variables = False
         rollback_on_failure = False
         soft_time_limit = 1800
@@ -87,7 +87,7 @@ class PostChangeValidation(ChainingJob):
     def _publish_report(self, label):
         template = ReportTemplate.objects.filter(name=REPORT_TEMPLATE_NAME).order_by("-is_shared").first()
         if template is None:
-            self.logger.warning("Report template %r not found; skipping Publish Report (run 'Load AVD Change Report' first).", REPORT_TEMPLATE_NAME)
+            self.logger.warning("Report template %r not found; skipping Publish Report (run 'Load Change Validation Report' first).", REPORT_TEMPLATE_NAME)
             self.set_step_status("Publish Report", JobChainStepStatusChoices.SKIPPED)
             return None
         before = PublishedReport.objects.filter(report_template=template).order_by("-published_at").first()
