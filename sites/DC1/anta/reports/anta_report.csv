@@ -1,28 +1,22 @@
 Device,Test Name,Test Status,Message(s),Test description,Test category
-dc1-leaf1,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 36,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-leaf1,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 767,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-leaf1,VerifyInterfacesStatus,failure,"Interface: Port-Channel1 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-leaf1,VerifyPortChannels,failure,"Interface: Port-Channel1 - Inactive port(s) - Ethernet1, PeerEthernet1",Verifies there are no inactive ports in port channels.,Interfaces
 dc1-leaf1,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
-dc1-leaf1,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-leaf2,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 34,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-leaf2,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 765,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-leaf2,VerifyInterfacesStatus,failure,"Interface: Port-Channel1 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-leaf2,VerifyPortChannels,failure,"Interface: Port-Channel1 - Inactive port(s) - Ethernet1, PeerEthernet1",Verifies there are no inactive ports in port channels.,Interfaces
 dc1-leaf2,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
-dc1-leaf2,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-leaf3,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 33,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-leaf3,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 764,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-leaf3,VerifyInterfacesStatus,failure,"Interface: Port-Channel1 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-leaf3,VerifyPortChannels,failure,"Interface: Port-Channel1 - Inactive port(s) - Ethernet1, PeerEthernet1",Verifies there are no inactive ports in port channels.,Interfaces
 dc1-leaf3,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
-dc1-leaf3,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-leaf4,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 28,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-leaf4,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 759,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-leaf4,VerifyInterfacesStatus,failure,"Interface: Port-Channel1 - Status mismatch - Expected: up/up, Actual: down/lowerLayerDown",Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
 dc1-leaf4,VerifyPortChannels,failure,"Interface: Port-Channel1 - Inactive port(s) - Ethernet1, PeerEthernet1",Verifies there are no inactive ports in port channels.,Interfaces
 dc1-leaf4,VerifyMlagInterfaces,failure,MLAG status is not ok - Inactive Ports: 1 Partial Active Ports: 0,Verifies there are no inactive or active-partial MLAG ports.,MLAG
-dc1-leaf4,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-spine1,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 39,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
-dc1-spine1,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
-dc1-spine2,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 38,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
-dc1-spine2,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: unsynchronised,Verifies if NTP is synchronised.,System
+dc1-spine1,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 771,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
+dc1-spine2,VerifyInterfaceDiscards,failure,Interface: Management1 - Non-zero discard counter(s): inDiscards: 770,Verifies that the interfaces packet discard counters are equal to zero.,Interfaces
 dc1-leaf1,VerifyEnvironmentCooling,skipped,VerifyEnvironmentCooling test is not supported on cEOSLab,Verifies the status of power supply fans and all fan trays.,Hardware
 dc1-leaf1,VerifyEnvironmentPower,skipped,VerifyEnvironmentPower test is not supported on cEOSLab,Verifies the power supplies state and input voltage.,Hardware
 dc1-leaf1,VerifyEnvironmentSystemCooling,skipped,VerifyEnvironmentSystemCooling test is not supported on cEOSLab,Verifies the device's system cooling status.,Hardware
@@ -83,6 +77,7 @@ dc1-leaf1,VerifyCoredump,success,,Verifies there are no core dump files.,System
 dc1-leaf1,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
 dc1-leaf1,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-leaf1,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-leaf1,VerifyNTP,success,,Verifies if NTP is synchronised.,System
 dc1-leaf1,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
 dc1-leaf1,VerifyVxlanConfigSanity,success,,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
 dc1-leaf2,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
@@ -103,6 +98,7 @@ dc1-leaf2,VerifyCoredump,success,,Verifies there are no core dump files.,System
 dc1-leaf2,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
 dc1-leaf2,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-leaf2,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-leaf2,VerifyNTP,success,,Verifies if NTP is synchronised.,System
 dc1-leaf2,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
 dc1-leaf2,VerifyVxlanConfigSanity,success,,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
 dc1-leaf3,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
@@ -123,6 +119,7 @@ dc1-leaf3,VerifyCoredump,success,,Verifies there are no core dump files.,System
 dc1-leaf3,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
 dc1-leaf3,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-leaf3,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-leaf3,VerifyNTP,success,,Verifies if NTP is synchronised.,System
 dc1-leaf3,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
 dc1-leaf3,VerifyVxlanConfigSanity,success,,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
 dc1-leaf4,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
@@ -143,6 +140,7 @@ dc1-leaf4,VerifyCoredump,success,,Verifies there are no core dump files.,System
 dc1-leaf4,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
 dc1-leaf4,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-leaf4,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-leaf4,VerifyNTP,success,,Verifies if NTP is synchronised.,System
 dc1-leaf4,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
 dc1-leaf4,VerifyVxlanConfigSanity,success,,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
 dc1-spine1,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
@@ -161,6 +159,7 @@ dc1-spine1,VerifyCoredump,success,,Verifies there are no core dump files.,System
 dc1-spine1,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
 dc1-spine1,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-spine1,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-spine1,VerifyNTP,success,,Verifies if NTP is synchronised.,System
 dc1-spine1,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
 dc1-spine2,VerifyBGPPeerSession,success,,Verifies the session state of BGP peers.,BGP
 dc1-spine2,VerifyRunningConfigDiffs,success,,Verifies there is no difference between the running-config and the startup-config.,Configuration
@@ -178,4 +177,5 @@ dc1-spine2,VerifyCoredump,success,,Verifies there are no core dump files.,System
 dc1-spine2,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
 dc1-spine2,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
 dc1-spine2,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-spine2,VerifyNTP,success,,Verifies if NTP is synchronised.,System
 dc1-spine2,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
