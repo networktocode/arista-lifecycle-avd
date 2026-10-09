@@ -41,7 +41,7 @@ has no such filter: a change control dispatch is an explicit request to validate
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
 | `feature_branches.yml` | push to any branch but `main` | `make dc1-build`, then commits the regenerated intended configs, documentation, twin configs, and amplification report back to the branch. |
-| `PR_test_digital_twin.yml` | `pull_request` (opened, synchronize, reopened) | Job `deploy-digital-twin` builds, finds the running twin, and pushes the twin configs over eAPI. Job `Network-validation-digital-twin` runs ANTA against the twin, commits the report, posts it as a sticky pull request comment, and fails the check if validation failed. The second job runs only if the deploy succeeded. |
+| `PR_test_digital_twin.yml` | `pull_request` (opened, synchronize, reopened) | Job `digital-twin` builds, redeploys the running twin with the built configs, then runs ANTA against it, commits the report, posts it as a sticky pull request comment, and fails the check if validation failed. Validation runs only if the redeploy succeeded. One job means one container and one build per pull request. |
 | `main_branch.yml` | push to `main` | Job `deploy-prod` deploys DC1 through CloudVision as a Service with `cv_submit_workspace=true cv_run_change_control=true`. Job `Network-validation` then runs ANTA against production and commits the report. The second job runs only if the deploy succeeded. |
 | `cvp_post_CC_validation.yml` | `repository_dispatch`, type `validation_trigger` | Runs the production ANTA validation on demand and commits the report. Post this dispatch when a CloudVision change control finishes. |
 
