@@ -1,4 +1,7 @@
-"""Load AVD Change Report: install the "AVD Change Report" Reports-app template from this repository.
+"""Load Change Validation Report: install the "Change Validation Report" Reports-app template from this repository.
+
+The report is Nautobot Operational Compliance's pre/post snapshot comparison for a change; it lives in this
+repository beside the post-change job that publishes it.
 
 Load this repository into Nautobot as a Git Repository with the "jobs" provided content; the job then reads the
 report definition from the checkout's own `reports/avd_change_report/` directory (report.yaml, Jinja blocks,
@@ -16,6 +19,8 @@ name = "Arista Lab Setup"  # module-level `name` is what Nautobot shows as the j
 
 REPORT_NAME = "avd_change_report"
 REPORTS_DIR = Path(__file__).resolve().parents[1] / "reports"  # <repo>/reports
+# Earlier names of the same template; an existing one is renamed in place so its published reports stay with it.
+LEGACY_TEMPLATE_NAMES = ("AVD Change Report",)
 
 
 def load_report(user, overwrite: bool, logger, source: Path = REPORTS_DIR, report_name: str = REPORT_NAME):
@@ -27,6 +32,13 @@ def load_report(user, overwrite: bool, logger, source: Path = REPORTS_DIR, repor
     definition = ReportTemplateImporter.load_definition(report_name, source)
     template_name = definition["name"]
     existing = ReportTemplate.objects.filter(name=template_name).order_by("-is_shared").first()
+    if existing is None:
+        legacy = ReportTemplate.objects.filter(name__in=LEGACY_TEMPLATE_NAMES).order_by("-is_shared").first()
+        if legacy is not None:
+            logger.info("Renaming report template %r to %r.", legacy.name, template_name, extra={"object": legacy})
+            legacy.name = template_name
+            legacy.validated_save()
+            existing = legacy
     if existing and not overwrite:
         logger.info("Report template %r already exists (%d blocks); leaving it untouched. Enable `overwrite` to rebuild it from %s.",
                     template_name, existing.blocks.count(), source, extra={"object": existing})
@@ -47,13 +59,13 @@ def load_report(user, overwrite: bool, logger, source: Path = REPORTS_DIR, repor
 
 
 class LoadAvdChangeReport(Job):
-    """Install (or rebuild) the AVD Change Report template, with its saved views and GraphQL queries."""
+    """Install (or rebuild) the Change Validation Report template, with its saved views and GraphQL queries."""
 
     overwrite = BooleanVar(default=False, description="Rebuild the template from this repository's definition even if it already exists. This discards any edits made to the template in the UI.")
 
     class Meta:  # pylint: disable=too-few-public-methods
-        name = "Load AVD Change Report"
-        description = "Creates the 'AVD Change Report' Reports-app template (blocks, saved views, GraphQL queries) from reports/avd_change_report in this repository. Idempotent; `overwrite` rebuilds it."
+        name = "Load Change Validation Report"
+        description = "Creates the 'Change Validation Report' Reports-app template (blocks, saved views, GraphQL queries) from reports/avd_change_report in this repository. Idempotent; `overwrite` rebuilds it."
         has_sensitive_variables = False
 
     def run(self, overwrite=False):  # pylint: disable=arguments-differ

@@ -1,6 +1,6 @@
-name: AVD Change Report
-description: Per-change artifact for the Arista AVD fabric (DC1), told in plain English from the latest Operational Compliance
-  snapshot comparison, with intent-to-configuration amplification.
+name: Change Validation Report
+description: Per-change artifact for the DC1 fabric, told in plain English from Nautobot Operational Compliance's
+  pre/post snapshot comparison, with intent-to-configuration amplification.
 enabled: true
 required_objects:
   savedviews:
@@ -13,9 +13,9 @@ required_objects:
   - name: AVD Config Contexts (Reports)
 blocks:
 - type: title_page
-  heading_text: AVD Change Report
+  heading_text: Change Validation Report
   heading_level: h1
-  subheading_text: DC1 fabric - change verification and intent-to-configuration summary
+  subheading_text: DC1 fabric - pre/post change validation and intent-to-configuration summary
   author: Nautobot
 - type: table_of_contents
   include_headings_up_to: h3

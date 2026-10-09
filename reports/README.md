@@ -5,7 +5,7 @@ the app's built-in reports (`nautobot_reports/builtin_reports/*`).
 
 | Folder | Template | Purpose |
 | --- | --- | --- |
-| `avd_change_report/` | AVD Change Report | Per-change artifact: the latest Operational Compliance snapshot comparison in the reporting period, told in prose (what changed, where, which before/after and AVD validation checks passed or failed), plus intent-vs-configuration amplification and the Nautobot change log for the window. |
+| `avd_change_report/` | Change Validation Report | Per-change artifact: the latest Operational Compliance snapshot comparison in the reporting period, told in prose (what changed, where, which before/after and AVD validation checks passed or failed), plus intent-vs-configuration amplification and the Nautobot change log for the window. |
 
 Loading into Nautobot (no app code needed): create a `ReportTemplate` and call the app's importer with this
 directory as `source_path`:
