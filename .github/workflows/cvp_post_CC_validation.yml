@@ -18,7 +18,7 @@ jobs:
     env:
       ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
     timeout-minutes: 15
-    runs-on: [self-hosted, clab]
+    runs-on: [self-hosted, "lab-${{ vars.NAUTOBOT_LAB_ID }}"]
     permissions:
       contents: write
     container:
