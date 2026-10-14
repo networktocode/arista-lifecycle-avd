@@ -52,6 +52,14 @@ BGP was {{ old.errors | join('; ') | lower | replace('bgp ', '') }}; now {{ afte
 BGP session state changed
 {%- endif -%}
 {%- endmacro %}
+{#- Per-item "new"/"missing" markers, the way jdiff records interfaces or BGP VRFs that appeared or went away. -#}
+{% macro markers_brief(node, noun, prefix='') -%}
+{%- set m = namespace(added=[], removed=[], other=[]) -%}
+{%- for name, mark in node.items() -%}
+{%- if mark == 'new' %}{% set _ = m.added.append(prefix ~ name) %}{% elif mark == 'missing' %}{% set _ = m.removed.append(prefix ~ name) %}{% else %}{% set _ = m.other.append(name) %}{% endif -%}
+{%- endfor -%}
+{%- if m.added %}{{ m.added | sort | join(', ') }} added{% endif %}{% if m.added and (m.removed or m.other) %}; {% endif %}{% if m.removed %}{{ m.removed | sort | join(', ') }} removed{% endif %}{% if m.removed and m.other %}; {% endif %}{% if m.other %}{{ m.other | length }} {{ noun }}{{ 's' if m.other | length != 1 }} changed ({{ m.other | sort | join(', ') }}){% endif %}
+{%- endmacro %}
 {#- Interface Health: get_interfaces maps interface -> {is_up, is_enabled}, either as a whole before/after pair
     or as per-interface "new"/"missing" markers. -#}
 {% macro interface_brief(node) -%}
@@ -64,11 +72,7 @@ BGP session state changed
 {%- endfor -%}
 {{ old | length }} interface{{ 's' if old | length != 1 }} before, {{ new | length }} after{% if i.down %}; {{ i.down | length }} down ({{ i.down | sort | join(', ') }}){% else %}; all up{% endif %}
 {%- elif node is mapping -%}
-{%- set i = namespace(added=[], removed=[], other=[]) -%}
-{%- for iname, idata in node.items() -%}
-{%- if idata == 'new' %}{% set _ = i.added.append(iname) %}{% elif idata == 'missing' %}{% set _ = i.removed.append(iname) %}{% else %}{% set _ = i.other.append(iname) %}{% endif -%}
-{%- endfor -%}
-{%- if i.added %}{{ i.added | sort | join(', ') }} added{% endif %}{% if i.added and (i.removed or i.other) %}; {% endif %}{% if i.removed %}{{ i.removed | sort | join(', ') }} removed{% endif %}{% if i.removed and i.other %}; {% endif %}{% if i.other %}{{ i.other | length }} interface{{ 's' if i.other | length != 1 }} changed ({{ i.other | sort | join(', ') }}){% endif %}
+{{ markers_brief(node, 'interface') }}
 {%- else -%}
 interface state changed
 {%- endif -%}
@@ -84,6 +88,8 @@ no difference recorded
 evaluation error: {{ diff.error }}
 {%- elif rule == 'BGP Session State' and diff.get('index_element') is mapping -%}
 {{ bgp_brief(diff.index_element) }}
+{%- elif rule == 'BGP Session State' and diff.get('vrfs') is mapping -%}
+{{ markers_brief(diff.vrfs, 'VRF', 'VRF ') }}
 {%- elif rule == 'Interface Health' and diff.get('get_interfaces') is mapping -%}
 {{ interface_brief(diff.get_interfaces) }}
 {%- elif rule == 'MLAG State' and diff.get('state') is mapping and 'new_value' in diff.state -%}
@@ -98,6 +104,25 @@ routes {{ diff.routes.total.old_value }}, now {{ diff.routes.total.new_value }}
 no difference recorded
 {%- endif -%}
 {%- endif -%}
+{%- endmacro %}
+{#- A before-vs-after check that only adds things: every difference is a "new" marker, and every interface
+    or BGP VRF it adds is up, or has all its peers Established, in the after snapshot. summary.j2 carries the
+    same two macros; keep them in step. -#}
+{% macro not_additions(node) -%}
+{%- if node is mapping and ('new_value' in node or 'old_value' in node) -%}x
+{%- elif node is mapping -%}{% for value in node.values() %}{{ not_additions(value) }}{% endfor %}
+{%- elif node != 'new' -%}x
+{%- endif -%}
+{%- endmacro %}
+{% macro only_added(x) -%}
+{%- set diff = x.diff if x.diff is mapping else {} -%}
+{%- set after = x.post.output if x.post.output is mapping else {} -%}
+{%- set a = namespace(ok=(diff | length > 0) and not (not_additions(diff) | trim)) -%}
+{%- for name, mark in (diff.get('get_interfaces') or {}).items() if mark == 'new' and not (((after.get('get_interfaces') or {}).get(name) or {}).get('is_up')) %}{% set a.ok = false %}{% endfor -%}
+{%- for vrf, mark in (diff.get('vrfs') or {}).items() if mark == 'new' -%}
+{%- for peer in ((((after.get('vrfs') or {}).get(vrf) or {}).get('peers')) or {}).values() if (peer.get('peerState') if peer is mapping else '') != 'Established' %}{% set a.ok = false %}{% endfor -%}
+{%- endfor -%}
+{{ 'yes' if a.ok else '' }}
 {%- endmacro %}
 {% if results is none %}
 > ⚠️ **Data source unavailable.** The Operational Compliance results saved view could not be loaded.
@@ -128,20 +153,20 @@ There is no before/after comparison in the reporting period, so there is nothing
 {#- one cell per device x rule, with a normalised outcome key -#}
 {% for d in devs %}
 {% for r in two_rules %}{% set x = ns.two.get(d ~ '|' ~ r) %}
-{% set o = 'unknown' if (not x or x.match == 'UNKNOWN') else ('changed' if x.match == 'FAIL' else 'ok') %}
+{% set o = 'unknown' if (not x or x.match == 'UNKNOWN') else ((('added' if (only_added(x) | trim) else 'changed')) if x.match == 'FAIL' else 'ok') %}
 {% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r, 'Other'), 'type': 'before vs. after', 'before': 'n/a', 'after': 'n/a', 'outcome': o, 'x': x}) %}{% endfor %}
 {% for r in one_rules %}{% set xb = ns.b.get(d ~ '|' ~ r) %}{% set xa = ns.a.get(d ~ '|' ~ r) %}{% set mb = xb.match if xb else None %}{% set ma = xa.match if xa else None %}
 {% set o = 'unknown' if (ma == 'UNKNOWN' or mb == 'UNKNOWN' or not xa or not xb) else ('ok' if (mb == 'PASS' and ma == 'PASS') else ('regressed' if (mb == 'PASS' and ma == 'FAIL') else ('fixed' if (mb == 'FAIL' and ma == 'PASS') else 'preexisting'))) %}
 {% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r, 'System'), 'type': 'absolute', 'before': (mb or 'not run'), 'after': (ma or 'not run'), 'outcome': o, 'x': xa or xb}) %}{% endfor %}
 {% endfor %}
-{% set icon = {'ok': '✅', 'changed': '⚠️', 'regressed': '⚠️', 'fixed': '🔧', 'preexisting': '❌', 'unknown': '❔'} %}
-{% set label = {'ok': 'OK', 'changed': 'Changed', 'regressed': 'Regressed', 'fixed': 'Fixed', 'preexisting': 'Pre-existing', 'unknown': 'Inconclusive'} %}
+{% set icon = {'ok': '✅', 'added': '➕', 'changed': '⚠️', 'regressed': '⚠️', 'fixed': '🔧', 'preexisting': '❌', 'unknown': '❔'} %}
+{% set label = {'ok': 'OK', 'added': 'Added', 'changed': 'Changed', 'regressed': 'Regressed', 'fixed': 'Fixed', 'preexisting': 'Pre-existing', 'unknown': 'Inconclusive'} %}
 {% macro count(cells, key) %}{{ cells | selectattr('outcome', 'equalto', key) | list | length }}{% endmacro %}
 {% set total = ns.cells | length %}
 {% set nchg = ns.cells | selectattr('outcome', 'equalto', 'changed') | list | length %}{% set nreg = ns.cells | selectattr('outcome', 'equalto', 'regressed') | list | length %}
 {% set nfix = ns.cells | selectattr('outcome', 'equalto', 'fixed') | list | length %}{% set npre = ns.cells | selectattr('outcome', 'equalto', 'preexisting') | list | length %}{% set nunk = ns.cells | selectattr('outcome', 'equalto', 'unknown') | list | length %}
-{% set nok = ns.cells | selectattr('outcome', 'equalto', 'ok') | list | length %}
-Every rule was evaluated on the **before** snapshot (*{{ pre.name }}*) and the **after** snapshot (*{{ post.name }}*): **{{ total }} checks** over **{{ devs | length }} devices** and **{{ (two_rules | length) + (one_rules | length) }} rules**. {{ two_rules | length }} rules compare the two snapshots directly; {{ one_rules | length }} absolute rules were judged in each snapshot and the two verdicts compared. {% if nchg == 0 and nreg == 0 and nunk == 0 %}**Nothing changed unexpectedly and nothing regressed.**{% else %}{% if nchg %}**{{ nchg }} change{{ 's' if nchg != 1 }}** detected{% endif %}{% if nchg and nreg %} and {% endif %}{% if nreg %}**{{ nreg }} regression{{ 's' if nreg != 1 }}**{% endif %}{% if nunk %}{{ ', ' if (nchg or nreg) }}**{{ nunk }} inconclusive**{% endif %}; see the findings below the tables.{% endif %}{% if nfix %} **{{ nfix }}** check{{ 's' if nfix != 1 }} {{ 'was' if nfix == 1 else 'were' }} fixed by this change.{% endif %}{% if npre %} **{{ npre }}** fail{{ 's' if npre == 1 }} in both snapshots and {{ 'is' if npre == 1 else 'are' }} not caused by it{% for r in ns.cells | selectattr('outcome', 'equalto', 'preexisting') | map(attribute='rule') | unique if r in known %} ({{ r }}: {{ known[r] }}){% endfor %}.{% endif %}
+{% set nok = ns.cells | selectattr('outcome', 'equalto', 'ok') | list | length %}{% set nadd = ns.cells | selectattr('outcome', 'equalto', 'added') | list | length %}
+Every rule was evaluated on the **before** snapshot (*{{ pre.name }}*) and the **after** snapshot (*{{ post.name }}*): **{{ total }} checks** over **{{ devs | length }} devices** and **{{ (two_rules | length) + (one_rules | length) }} rules**. {{ two_rules | length }} rules compare the two snapshots directly; {{ one_rules | length }} absolute rules were judged in each snapshot and the two verdicts compared. {% if nadd %}**{{ nadd }} addition{{ 's' if nadd != 1 }}**, each new in the after snapshot and up or Established (listed under Findings). {% endif %}{% if nchg == 0 and nreg == 0 and nunk == 0 %}**Nothing changed unexpectedly and nothing regressed.**{% else %}{% if nchg %}**{{ nchg }} change{{ 's' if nchg != 1 }}** detected{% endif %}{% if nchg and nreg %} and {% endif %}{% if nreg %}**{{ nreg }} regression{{ 's' if nreg != 1 }}**{% endif %}{% if nunk %}{{ ', ' if (nchg or nreg) }}**{{ nunk }} inconclusive**{% endif %}; see the findings below the tables.{% endif %}{% if nfix %} **{{ nfix }}** check{{ 's' if nfix != 1 }} {{ 'was' if nfix == 1 else 'were' }} fixed by this change.{% endif %}{% if npre %} **{{ npre }}** fail{{ 's' if npre == 1 }} in both snapshots and {{ 'is' if npre == 1 else 'are' }} not caused by it{% for r in ns.cells | selectattr('outcome', 'equalto', 'preexisting') | map(attribute='rule') | unique if r in known %} ({{ r }}: {{ known[r] }}){% endfor %}.{% endif %}
 {% set only_before = before_rules | reject('in', one_rules) | list %}{% set only_after = one_rules | reject('in', before_rules) | list %}
 {% set before_devs = (before | map(attribute='post.device.name') | unique | list) %}{% set after_devs = (after | map(attribute='post.device.name') | unique | list) %}
 {% set dev_mismatch = (before_devs | reject('in', after_devs) | list) + (after_devs | reject('in', before_devs) | list) %}
@@ -151,32 +176,32 @@ Every rule was evaluated on the **before** snapshot (*{{ pre.name }}*) and the *
 
 ### Summary totals
 
-Columns: **OK** ✅ passed, **Changed** ⚠️ differs before vs. after or regressed, **Fixed** 🔧 healthy again after the change, **Pre-existing** ❌ failed in both snapshots, **Unclear** ❔ could not be judged.
+Columns: **OK** ✅ passed or unchanged, **Added** ➕ only new items, each up or Established after the change, **Changed** ⚠️ differs before vs. after in any other way, or regressed, **Fixed** 🔧 healthy again after the change, **Pre-existing** ❌ failed in both snapshots, **Unclear** ❔ could not be judged.
 
-| Total checks | OK | Changed | Fixed | Pre-existing | Unclear |
-| :- | -: | -: | -: | -: | -: |
-| {{ total }} | {{ nok }} | {{ nchg + nreg }} | {{ nfix }} | {{ npre }} | {{ nunk }} |
+| Total checks | OK | Added | Changed | Fixed | Pre-existing | Unclear |
+| :- | -: | -: | -: | -: | -: | -: |
+| {{ total }} | {{ nok }} | {{ nadd }} | {{ nchg + nreg }} | {{ nfix }} | {{ npre }} | {{ nunk }} |
 
 ### Summary totals per device
 
-| Device | Total | OK | Changed | Fixed | Pre-existing | Unclear | Areas affected |
-| :- | -: | -: | -: | -: | -: | -: | :- |
+| Device | Total | OK | Added | Changed | Fixed | Pre-existing | Unclear | Areas affected |
+| :- | -: | -: | -: | -: | -: | -: | -: | :- |
 {% for d in devs -%}
 {%- set dc = ns.cells | selectattr('device', 'equalto', d) | list -%}
 {%- set bad = dc | rejectattr('outcome', 'in', ['ok', 'fixed', 'preexisting']) | map(attribute='area') | unique | sort | list -%}
-| **{{ d }}** | {{ dc | length }} | {{ count(dc, 'ok') }} | {{ (count(dc, 'changed') | int) + (count(dc, 'regressed') | int) }} | {{ count(dc, 'fixed') }} | {{ count(dc, 'preexisting') }} | {{ count(dc, 'unknown') }} | {{ bad | join(', ') or '-' }} |
+| **{{ d }}** | {{ dc | length }} | {{ count(dc, 'ok') }} | {{ count(dc, 'added') }} | {{ (count(dc, 'changed') | int) + (count(dc, 'regressed') | int) }} | {{ count(dc, 'fixed') }} | {{ count(dc, 'preexisting') }} | {{ count(dc, 'unknown') }} | {{ bad | join(', ') or '-' }} |
 {% endfor %}
 ### Summary totals per area
 
-| Area | Total | OK | Changed | Fixed | Pre-existing | Unclear |
-| :- | -: | -: | -: | -: | -: | -: |
+| Area | Total | OK | Added | Changed | Fixed | Pre-existing | Unclear |
+| :- | -: | -: | -: | -: | -: | -: | -: |
 {% for ar in ns.cells | map(attribute='area') | unique | sort -%}
 {%- set ac = ns.cells | selectattr('area', 'equalto', ar) | list -%}
-| **{{ ar }}** | {{ ac | length }} | {{ count(ac, 'ok') }} | {{ (count(ac, 'changed') | int) + (count(ac, 'regressed') | int) }} | {{ count(ac, 'fixed') }} | {{ count(ac, 'preexisting') }} | {{ count(ac, 'unknown') }} |
+| **{{ ar }}** | {{ ac | length }} | {{ count(ac, 'ok') }} | {{ count(ac, 'added') }} | {{ (count(ac, 'changed') | int) + (count(ac, 'regressed') | int) }} | {{ count(ac, 'fixed') }} | {{ count(ac, 'preexisting') }} | {{ count(ac, 'unknown') }} |
 {% endfor %}
 ### Detailed results
 
-Legend: **before vs. after** rules report *OK* (unchanged) or *Changed*; **absolute** rules were judged in each snapshot, and the outcome carries the verdict before → after: *OK* (passed both times), *Regressed* (passed before, fails after), *Fixed* (failed before, passes after), *Pre-existing* (failed both times).
+Legend: **before vs. after** rules report *OK* (unchanged), *Added* (only new items, each up or Established after the change), or *Changed*; **absolute** rules were judged in each snapshot, and the outcome carries the verdict before → after: *OK* (passed both times), *Regressed* (passed before, fails after), *Fixed* (failed before, passes after), *Pre-existing* (failed both times).
 
 {% for d in devs %}
 #### {{ d }}
@@ -189,7 +214,7 @@ Legend: **before vs. after** rules report *OK* (unchanged) or *Changed*; **absol
 {% endfor %}
 
 {% endfor %}
-{% set findings = ns.cells | selectattr('outcome', 'in', ['changed', 'regressed', 'unknown']) | list %}
+{% set findings = ns.cells | selectattr('outcome', 'in', ['added', 'changed', 'regressed', 'unknown']) | list %}
 {% if findings %}
 ### Findings
 

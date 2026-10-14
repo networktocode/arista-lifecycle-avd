@@ -1,3 +1,22 @@
+{#- A before-vs-after check that only adds things: every difference is a "new" marker, and every interface
+    or BGP VRF it adds is up, or has all its peers Established, in the after snapshot. change_analysis.j2
+    carries the same two macros; keep them in step. -#}
+{% macro not_additions(node) -%}
+{%- if node is mapping and ('new_value' in node or 'old_value' in node) -%}x
+{%- elif node is mapping -%}{% for value in node.values() %}{{ not_additions(value) }}{% endfor %}
+{%- elif node != 'new' -%}x
+{%- endif -%}
+{%- endmacro %}
+{% macro only_added(x) -%}
+{%- set diff = x.diff if x.diff is mapping else {} -%}
+{%- set after = x.post.output if x.post.output is mapping else {} -%}
+{%- set a = namespace(ok=(diff | length > 0) and not (not_additions(diff) | trim)) -%}
+{%- for name, mark in (diff.get('get_interfaces') or {}).items() if mark == 'new' and not (((after.get('get_interfaces') or {}).get(name) or {}).get('is_up')) %}{% set a.ok = false %}{% endfor -%}
+{%- for vrf, mark in (diff.get('vrfs') or {}).items() if mark == 'new' -%}
+{%- for peer in ((((after.get('vrfs') or {}).get(vrf) or {}).get('peers')) or {}).values() if (peer.get('peerState') if peer is mapping else '') != 'Established' %}{% set a.ok = false %}{% endfor -%}
+{%- endfor -%}
+{{ 'yes' if a.ok else '' }}
+{%- endmacro %}
 {% if results is none or gql_fabric is none %}
 > ⚠️ **Data source unavailable.** This report could not load {% if results is none %}the Operational Compliance results{% endif %}{% if results is none and gql_fabric is none %} and {% endif %}{% if gql_fabric is none %}the device intent{% endif %}. The backing saved view or GraphQL query may be missing.
 {% else -%}
@@ -27,7 +46,10 @@ No snapshot comparison was taken for the **{{ ndev }} AVD device{{ 's' if ndev !
 {% set who = latest.job.user.username if latest.job.user else 'an automated job' %}
 This change touched **{{ changed_devices | length }} device{{ 's' if changed_devices | length != 1 }}** at **{{ loc | join(', ') or 'DC1' }}** ({{ nspine }} spine{{ 's' if nspine != 1 }}, {{ nleaf }} leaf{{ 's' if nleaf != 1 }} in the fabric) between **{{ pre.created.strftime('%H:%M') }}** and **{{ post.created.strftime('%H:%M UTC on %-d %b %Y') }}**. The before snapshot was *{{ pre.name }}* and the after snapshot *{{ post.name }}*; the comparison was run by **{{ who }}**.
 
-Of the **{{ cw_total }} change-window check{{ 's' if cw_total != 1 }}** (before vs. after), **{{ cw_total - cw_fail - cw_unknown }} passed**{% if cw_fail %} and **{{ cw_fail }} failed**{% endif %}{% if cw_unknown %}, with **{{ cw_unknown }} inconclusive**{% endif %}.{% if cw_fail %}{% set fail_rows = cmp.filter(match='FAIL').order_by('post__device__name') | list %} What changed: {% for rule in fail_rows | map(attribute='post.validation_rule.name') | unique | sort %}{% set rule_devs = fail_rows | selectattr('post.validation_rule.name', 'equalto', rule) | map(attribute='post.device.name') | unique | sort | list %}*{{ rule }}* on {{ rule_devs | length }} device{{ 's' if rule_devs | length != 1 }} ({{ rule_devs | join(', ') }}){{ '; ' if not loop.last }}{% endfor %}.{% else %} Nothing that was healthy before the change is unhealthy after it.{% endif %}
+{% set fail_rows = cmp.filter(match='FAIL').order_by('post__device__name') | list %}
+{% set adds = namespace(n=0) %}{% for r in fail_rows %}{% if only_added(r) | trim %}{% set adds.n = adds.n + 1 %}{% endif %}{% endfor %}
+{% set all_added = cw_fail and adds.n == cw_fail %}
+Of the **{{ cw_total }} change-window check{{ 's' if cw_total != 1 }}** (before vs. after), **{{ cw_total - cw_fail - cw_unknown }} unchanged**{% if cw_fail %} and **{{ cw_fail }} changed**{% if all_added %}, {{ 'an addition' if cw_fail == 1 else 'all of them additions' }}{% elif adds.n %} ({{ adds.n }} of them addition{{ 's' if adds.n != 1 }}){% endif %}{% endif %}{% if cw_unknown %}, with **{{ cw_unknown }} inconclusive**{% endif %}.{% if cw_fail %} {{ 'What was added' if all_added else 'What changed' }}: {% for rule in fail_rows | map(attribute='post.validation_rule.name') | unique | sort %}{% set rule_devs = fail_rows | selectattr('post.validation_rule.name', 'equalto', rule) | map(attribute='post.device.name') | unique | sort | list %}*{{ rule }}* on {{ rule_devs | length }} device{{ 's' if rule_devs | length != 1 }} ({{ rule_devs | join(', ') }}){{ '; ' if not loop.last }}{% endfor %}.{% else %} Nothing that was healthy before the change is unhealthy after it.{% endif %}
 
 {% set before_rows = results.filter(post__snapshot=pre, pre__isnull=True) %}{% set bm = {} %}{% for r in before_rows %}{% set _ = bm.update({r.post.device.name ~ '|' ~ r.post.validation_rule.name: r.match}) %}{% endfor %}{% set ab = namespace(reg=0, fixed=0, pre=0, both=0, reg_names=[]) %}{% for r in one_sided %}{% set mb = bm.get(r.post.device.name ~ '|' ~ r.post.validation_rule.name) %}{% if mb == 'PASS' and r.match == 'FAIL' %}{% set ab.reg = ab.reg + 1 %}{% set _ = ab.reg_names.append(r.post.validation_rule.name ~ ' on ' ~ r.post.device.name) %}{% elif mb == 'FAIL' and r.match == 'PASS' %}{% set ab.fixed = ab.fixed + 1 %}{% elif mb == 'FAIL' and r.match == 'FAIL' %}{% set ab.pre = ab.pre + 1 %}{% elif r.match == 'PASS' %}{% set ab.both = ab.both + 1 %}{% endif %}{% endfor %}The **{{ av_total }} absolute check{{ 's' if av_total != 1 }}** were judged before and after the change: **{{ ab.both }} passed both times**, {% if ab.reg %}**{{ ab.reg }} regressed** ({{ ab.reg_names | join(', ') }}){% else %}**none regressed**{% endif %}{% if ab.fixed %}, **{{ ab.fixed }} {{ 'was' if ab.fixed == 1 else 'were' }} fixed** by the change{% endif %}{% if ab.pre %}, and **{{ ab.pre }}** fail{{ 's' if ab.pre == 1 }} in both snapshots (pre-existing{% if ns.known %}; {{ ns.known }} of {{ 'them is a' if ns.known == 1 else 'these are' }} known lab condition{{ 's' if ns.known != 1 }}: NTP is unreachable from the lab{% endif %}){% endif %}.
 
@@ -52,7 +74,7 @@ Intent for this fabric is **{{ amp.intent }} lines** of structured data in Nauto
 {% if cw_fail == 0 and ab.reg == 0 and cw_unknown == 0 -%}
 **Result: {{ cw_fail }} change{{ 's' if cw_fail != 1 }} detected, {{ ab.reg }} regression{{ 's' if ab.reg != 1 }}, {{ ab.fixed }} fixed, {{ ab.pre }} pre-existing failure{{ 's' if ab.pre != 1 }}, {{ cw_unknown }} inconclusive.**
 {% else -%}
-**Result: {{ cw_fail }} change{{ 's' if cw_fail != 1 }} detected, {{ ab.reg }} regression{{ 's' if ab.reg != 1 }}, {{ ab.fixed }} fixed, {{ ab.pre }} pre-existing failure{{ 's' if ab.pre != 1 }}, {{ cw_unknown }} inconclusive.** Details in Change Analysis.
+**Result: {{ cw_fail }} change{{ 's' if cw_fail != 1 }} detected{% if all_added %} ({{ 'an addition' if cw_fail == 1 else 'all additions' }}){% elif adds.n %} ({{ adds.n }} addition{{ 's' if adds.n != 1 }}){% endif %}, {{ ab.reg }} regression{{ 's' if ab.reg != 1 }}, {{ ab.fixed }} fixed, {{ ab.pre }} pre-existing failure{{ 's' if ab.pre != 1 }}, {{ cw_unknown }} inconclusive.** Details in Change Analysis.
 {% endif %}
 {% endif %}
 {% endif %}
