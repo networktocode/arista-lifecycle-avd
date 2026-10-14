@@ -43,11 +43,15 @@ dns_settings:
     - ip_address: 8.8.4.4
       vrf: use_default_mgmt_method_vrf
   set_source_interfaces: false
+# iburst sets the clock within seconds of a switch booting rather than minutes, so the
+# production ANTA run that follows a deploy finds NTP synchronised.
 ntp_settings:
   server_vrf: use_default_mgmt_method_vrf
   servers:
     - name: 0.north-america.pool.ntp.org
+      iburst: true
     - name: 1.north-america.pool.ntp.org
+      iburst: true
 fabric_sflow:
   uplinks: true
   downlinks: true

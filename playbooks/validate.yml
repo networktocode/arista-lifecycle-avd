@@ -6,8 +6,19 @@
   vars:
     anta_user: "{{ lookup('env', 'ANTA_USERNAME') | default('cvpadmin', true) }}"
     anta_password: "{{ lookup('env', 'ANTA_PASSWORD') }}"
+    # The lab deltas the twin skips too (validate_twin_eapi.yml), so both labs report
+    # the same way: VerifyInterfaceDiscards trips on Management1, which sits on the
+    # containerlab management bridge, and VerifyMlagInterfaces reports the
+    # server-facing port-channels down because the lab host image runs bare
+    # interfaces without LACP. Nautobot renders those server ports with
+    # validate_state: false, which keeps them out of the interface checks as well.
     avd_catalogs_filters:
-      - skip_tests: [VerifyLoggingErrors]
+      - skip_tests:
+          [
+            VerifyLoggingErrors,
+            VerifyInterfaceDiscards,
+            VerifyMlagInterfaces,
+          ]
   tasks:
     - name: Validate states on EOS devices
       ansible.builtin.import_role:
