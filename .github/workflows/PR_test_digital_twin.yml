@@ -10,7 +10,7 @@
 #
 # Forks are deliberately not supported: a pull_request run from a fork gets no
 # secrets and a read-only token, so it could neither reach the twin nor commit
-# the report. Both jobs skip unless the head branch lives in this repository,
+# the report. The job skips unless the head branch lives in this repository,
 # and pull_request_target is never used.
 name: Deploy & test configurations in the digital twin
 
@@ -27,17 +27,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy-digital-twin:
+  digital-twin:
     if: github.event.pull_request.head.repo.full_name == github.repository
     env:
       ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
-    timeout-minutes: 15
+    timeout-minutes: 20
     runs-on: [self-hosted, "lab-${{ vars.NAUTOBOT_LAB_ID }}"]
     permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      output_dc1: ${{ steps.dc1-deploy.outcome }}
+      contents: write
+      pull-requests: write
     container:
       image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
       options: '--user=root --add-host=host.docker.internal:host-gateway'
@@ -63,24 +61,13 @@ jobs:
               - 'sites/DC1/group_vars/**'
               - 'sites/_global_vars/**'
 
-      - name: Check site paths for AVD variable changes
-        uses: dorny/paths-filter@v4
-        id: filter-sites
-        with:
-          filters: |
-            workflows:
-              - 'sites/*/group_vars/**'
-              - 'sites/*/inventory.yml'
-              - 'sites/_global_vars/**'
-
-      - name: Build configuration for every site
-        run: |
-          for inventory in sites/*/inventory.yml; do
-            site="$(basename "$(dirname "$inventory")")"
-            make build SITE="$site"
-          done
-        id: build-sites
-        if: steps.filter-sites.outputs.workflows == 'true'
+      # One job and one build: deploy and validation share this container, and
+      # the twin never uses the production variant, which the Build feature
+      # branch workflow renders and commits, so only the twin's is built here.
+      - name: Build the DC1 digital twin's configuration
+        run: make dc1-build-twin
+        id: build-twin
+        if: steps.filter-dc1.outputs.workflows == 'true'
 
       - name: Redeploy the digital twin with the pull request's configuration
         # Startup configuration is applied ungated at boot, unlike runtime sessions,
@@ -89,41 +76,12 @@ jobs:
         # startup configs, redeploys the lab in place, and waits for every eAPI.
         run: make dc1-deploy-twin
         id: dc1-deploy
-        if: steps.filter-dc1.outputs.workflows == 'true' && steps.build-sites.outcome == 'success'
+        if: steps.build-twin.outcome == 'success'
         env:
           CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
 
-  Network-validation-digital-twin:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && needs.deploy-digital-twin.outputs.output_dc1 == 'success' }}
-    needs: deploy-digital-twin
-    env:
-      ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
-    timeout-minutes: 15
-    runs-on: [self-hosted, "lab-${{ vars.NAUTOBOT_LAB_ID }}"]
-    permissions:
-      contents: write
-      pull-requests: write
-    container:
-      image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
-      options: '--user=root --add-host=host.docker.internal:host-gateway'
-      env:
-        PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref }}
-
-      - name: add the repo to git safe directory
-        run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
-
-      # This job runs in its own container with its own clean checkout, so the
-      # AVD artifacts and the twin inventory from the deploy job are both gone.
-      # Rebuild both here rather than trusting what happens to be committed.
-      - name: Build configuration for the DC1 fabric
-        run: make dc1-build
-
       - name: Find the running DC1 digital twin
+        if: steps.dc1-deploy.outcome == 'success'
         run: |
           python3 digital_twin/clab/twin_inventory.py \
             --api http://host.docker.internal:8080 \
@@ -135,6 +93,7 @@ jobs:
           CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
 
       - name: Pin ANTA 1.9.0
+        if: steps.dc1-deploy.outcome == 'success'
         # The image ships anta 1.8.0 under /home/avd/.local, which the job's PYTHONPATH
         # puts ahead of system site-packages. pip's --target does not replace an existing
         # package's files, so the old version is uninstalled first and 1.9.0 installed
@@ -145,11 +104,13 @@ jobs:
           python3 -c 'import anta; assert anta.__version__ == "v1.9.0", anta.__version__; print("anta", anta.__version__)'
 
       - name: run DC1 validation
+        if: steps.dc1-deploy.outcome == 'success'
         run: make dc1-validate-twin
         id: dc1-validation
         continue-on-error: true
 
       - name: commit the test catalogs and report to the repository
+        if: steps.dc1-deploy.outcome == 'success'
         run: |
           if [[ -n $(git status --porcelain) ]]; then
             git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
