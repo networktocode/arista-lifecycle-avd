@@ -1,0 +1,177 @@
+Device,Test Name,Test Status,Message(s),Test description,Test category
+dc1-spine1,VerifyRunningConfigDiffs,error,show running-config diffs has failed: Invalid input (privileged mode required),Verifies there is no difference between the running-config and the startup-config.,Configuration
+dc1-spine1,VerifyReachability,error,"ping vrf default 10.101.0.1 source 10.101.0.0 size 100 repeat 1 has failed: Invalid input (privileged mode required)
+ping vrf default 10.101.0.5 source 10.101.0.4 size 100 repeat 1 has failed: Invalid input (privileged mode required)
+ping vrf default 10.101.0.9 source 10.101.0.8 size 100 repeat 1 has failed: Invalid input (privileged mode required)
+ping vrf default 10.101.0.13 source 10.101.0.12 size 100 repeat 1 has failed: Invalid input (privileged mode required)",Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-spine1,VerifyFileSystemUtilization,error,bash timeout 10 df -h has failed: Invalid input (privileged mode required),Verifies that no partition is utilizing more than 75% of its disk space.,System
+dc1-spine2,VerifyRunningConfigDiffs,error,show running-config diffs has failed: Invalid input (privileged mode required),Verifies there is no difference between the running-config and the startup-config.,Configuration
+dc1-spine2,VerifyReachability,error,"ping vrf default 10.101.0.3 source 10.101.0.2 size 100 repeat 1 has failed: Invalid input (privileged mode required)
+ping vrf default 10.101.0.7 source 10.101.0.6 size 100 repeat 1 has failed: Invalid input (privileged mode required)
+ping vrf default 10.101.0.11 source 10.101.0.10 size 100 repeat 1 has failed: Invalid input (privileged mode required)
+ping vrf default 10.101.0.15 source 10.101.0.14 size 100 repeat 1 has failed: Invalid input (privileged mode required)",Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-spine2,VerifyFileSystemUtilization,error,bash timeout 10 df -h has failed: Invalid input (privileged mode required),Verifies that no partition is utilizing more than 75% of its disk space.,System
+dc1-leaf1,VerifyBGPPeerSession,failure,Peer: 10.99.1.129 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.130 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.0 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.2 VRF: default - Incorrect session state - Expected: Established Actual: Active,Verifies the session state of BGP peers.,BGP
+dc1-leaf1,VerifyReachability,failure,Destination 10.101.0.0 (dc1-spine1_Ethernet1/1) from 10.101.0.1 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.101.0.2 (dc1-spine2_Ethernet1/1) from 10.101.0.3 in VRF default - Packet loss detected - Transmitted: 1 Received: 0,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-leaf1,VerifyVxlanConfigSanity,failure,Vxlan Category: localVtep - Config sanity check is not passing,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
+dc1-leaf2,VerifyBGPPeerSession,failure,Peer: 10.99.1.129 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.130 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.4 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.6 VRF: default - Incorrect session state - Expected: Established Actual: Active,Verifies the session state of BGP peers.,BGP
+dc1-leaf2,VerifyReachability,failure,Destination 10.101.0.4 (dc1-spine1_Ethernet1/2) from 10.101.0.5 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.101.0.6 (dc1-spine2_Ethernet1/2) from 10.101.0.7 in VRF default - Packet loss detected - Transmitted: 1 Received: 0,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-leaf2,VerifyVxlanConfigSanity,failure,Vxlan Category: localVtep - Config sanity check is not passing,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
+dc1-leaf3,VerifyBGPPeerSession,failure,Peer: 10.99.1.129 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.130 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.8 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.10 VRF: default - Incorrect session state - Expected: Established Actual: Active,Verifies the session state of BGP peers.,BGP
+dc1-leaf3,VerifyReachability,failure,Destination 10.101.0.8 (dc1-spine1_Ethernet1/3) from 10.101.0.9 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.101.0.10 (dc1-spine2_Ethernet1/3) from 10.101.0.11 in VRF default - Packet loss detected - Transmitted: 1 Received: 0,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-leaf3,VerifyVxlanConfigSanity,failure,Vxlan Category: localVtep - Config sanity check is not passing,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
+dc1-leaf4,VerifyBGPPeerSession,failure,Peer: 10.99.1.129 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.99.1.130 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.12 VRF: default - Incorrect session state - Expected: Established Actual: Active - Peer: 10.101.0.14 VRF: default - Incorrect session state - Expected: Established Actual: Active,Verifies the session state of BGP peers.,BGP
+dc1-leaf4,VerifyReachability,failure,Destination 10.101.0.12 (dc1-spine1_Ethernet1/4) from 10.101.0.13 in VRF default - Packet loss detected - Transmitted: 1 Received: 0 - Destination 10.101.0.14 (dc1-spine2_Ethernet1/4) from 10.101.0.15 in VRF default - Packet loss detected - Transmitted: 1 Received: 0,Verifies point-to-point reachability between Ethernet interfaces.,Connectivity
+dc1-leaf4,VerifyVxlanConfigSanity,failure,Vxlan Category: localVtep - Config sanity check is not passing,Verifies there are no VXLAN config-sanity inconsistencies.,VXLAN
+dc1-spine1,VerifyBGPPeerSession,failure,'show bgp neighbors vrf all' failed on dc1-spine1: BGP inactive,Verifies the session state of BGP peers.,BGP
+dc1-spine1,VerifyInterfacesStatus,failure,Interface: Loopback0 - Not configured,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-spine1,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: NTP is disabled.,Verifies if NTP is synchronised.,System
+dc1-spine2,VerifyBGPPeerSession,failure,'show bgp neighbors vrf all' failed on dc1-spine2: BGP inactive,Verifies the session state of BGP peers.,BGP
+dc1-spine2,VerifyInterfacesStatus,failure,Interface: Loopback0 - Not configured,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-spine2,VerifyNTP,failure,NTP status mismatch - Expected: synchronised Actual: NTP is disabled.,Verifies if NTP is synchronised.,System
+dc1-leaf1,VerifyEnvironmentCooling,skipped,VerifyEnvironmentCooling test is not supported on cEOSLab,Verifies the status of power supply fans and all fan trays.,Hardware
+dc1-leaf1,VerifyEnvironmentPower,skipped,VerifyEnvironmentPower test is not supported on cEOSLab,Verifies the power supplies state and input voltage.,Hardware
+dc1-leaf1,VerifyEnvironmentSystemCooling,skipped,VerifyEnvironmentSystemCooling test is not supported on cEOSLab,Verifies the device's system cooling status.,Hardware
+dc1-leaf1,VerifyInventory,skipped,VerifyInventory test is not supported on cEOSLab,Verifies the physical hardware inventory of the device.,Hardware
+dc1-leaf1,VerifyTemperature,skipped,VerifyTemperature test is not supported on cEOSLab,Verifies if the device temperature is within acceptable limits.,Hardware
+dc1-leaf1,VerifyTransceiversManufacturers,skipped,VerifyTransceiversManufacturers test is not supported on cEOSLab,Verifies if all the transceivers come from approved manufacturers.,Hardware
+dc1-leaf1,VerifyTransceiversTemperature,skipped,VerifyTransceiversTemperature test is not supported on cEOSLab,Verifies if all the transceivers are operating at an acceptable temperature.,Hardware
+dc1-leaf2,VerifyEnvironmentCooling,skipped,VerifyEnvironmentCooling test is not supported on cEOSLab,Verifies the status of power supply fans and all fan trays.,Hardware
+dc1-leaf2,VerifyEnvironmentPower,skipped,VerifyEnvironmentPower test is not supported on cEOSLab,Verifies the power supplies state and input voltage.,Hardware
+dc1-leaf2,VerifyEnvironmentSystemCooling,skipped,VerifyEnvironmentSystemCooling test is not supported on cEOSLab,Verifies the device's system cooling status.,Hardware
+dc1-leaf2,VerifyInventory,skipped,VerifyInventory test is not supported on cEOSLab,Verifies the physical hardware inventory of the device.,Hardware
+dc1-leaf2,VerifyTemperature,skipped,VerifyTemperature test is not supported on cEOSLab,Verifies if the device temperature is within acceptable limits.,Hardware
+dc1-leaf2,VerifyTransceiversManufacturers,skipped,VerifyTransceiversManufacturers test is not supported on cEOSLab,Verifies if all the transceivers come from approved manufacturers.,Hardware
+dc1-leaf2,VerifyTransceiversTemperature,skipped,VerifyTransceiversTemperature test is not supported on cEOSLab,Verifies if all the transceivers are operating at an acceptable temperature.,Hardware
+dc1-leaf3,VerifyEnvironmentCooling,skipped,VerifyEnvironmentCooling test is not supported on cEOSLab,Verifies the status of power supply fans and all fan trays.,Hardware
+dc1-leaf3,VerifyEnvironmentPower,skipped,VerifyEnvironmentPower test is not supported on cEOSLab,Verifies the power supplies state and input voltage.,Hardware
+dc1-leaf3,VerifyEnvironmentSystemCooling,skipped,VerifyEnvironmentSystemCooling test is not supported on cEOSLab,Verifies the device's system cooling status.,Hardware
+dc1-leaf3,VerifyInventory,skipped,VerifyInventory test is not supported on cEOSLab,Verifies the physical hardware inventory of the device.,Hardware
+dc1-leaf3,VerifyTemperature,skipped,VerifyTemperature test is not supported on cEOSLab,Verifies if the device temperature is within acceptable limits.,Hardware
+dc1-leaf3,VerifyTransceiversManufacturers,skipped,VerifyTransceiversManufacturers test is not supported on cEOSLab,Verifies if all the transceivers come from approved manufacturers.,Hardware
+dc1-leaf3,VerifyTransceiversTemperature,skipped,VerifyTransceiversTemperature test is not supported on cEOSLab,Verifies if all the transceivers are operating at an acceptable temperature.,Hardware
+dc1-leaf4,VerifyEnvironmentCooling,skipped,VerifyEnvironmentCooling test is not supported on cEOSLab,Verifies the status of power supply fans and all fan trays.,Hardware
+dc1-leaf4,VerifyEnvironmentPower,skipped,VerifyEnvironmentPower test is not supported on cEOSLab,Verifies the power supplies state and input voltage.,Hardware
+dc1-leaf4,VerifyEnvironmentSystemCooling,skipped,VerifyEnvironmentSystemCooling test is not supported on cEOSLab,Verifies the device's system cooling status.,Hardware
+dc1-leaf4,VerifyInventory,skipped,VerifyInventory test is not supported on cEOSLab,Verifies the physical hardware inventory of the device.,Hardware
+dc1-leaf4,VerifyTemperature,skipped,VerifyTemperature test is not supported on cEOSLab,Verifies if the device temperature is within acceptable limits.,Hardware
+dc1-leaf4,VerifyTransceiversManufacturers,skipped,VerifyTransceiversManufacturers test is not supported on cEOSLab,Verifies if all the transceivers come from approved manufacturers.,Hardware
+dc1-leaf4,VerifyTransceiversTemperature,skipped,VerifyTransceiversTemperature test is not supported on cEOSLab,Verifies if all the transceivers are operating at an acceptable temperature.,Hardware
+dc1-spine1,VerifyEnvironmentCooling,skipped,VerifyEnvironmentCooling test is not supported on cEOSLab,Verifies the status of power supply fans and all fan trays.,Hardware
+dc1-spine1,VerifyEnvironmentPower,skipped,VerifyEnvironmentPower test is not supported on cEOSLab,Verifies the power supplies state and input voltage.,Hardware
+dc1-spine1,VerifyEnvironmentSystemCooling,skipped,VerifyEnvironmentSystemCooling test is not supported on cEOSLab,Verifies the device's system cooling status.,Hardware
+dc1-spine1,VerifyInventory,skipped,VerifyInventory test is not supported on cEOSLab,Verifies the physical hardware inventory of the device.,Hardware
+dc1-spine1,VerifyTemperature,skipped,VerifyTemperature test is not supported on cEOSLab,Verifies if the device temperature is within acceptable limits.,Hardware
+dc1-spine1,VerifyTransceiversManufacturers,skipped,VerifyTransceiversManufacturers test is not supported on cEOSLab,Verifies if all the transceivers come from approved manufacturers.,Hardware
+dc1-spine1,VerifyTransceiversTemperature,skipped,VerifyTransceiversTemperature test is not supported on cEOSLab,Verifies if all the transceivers are operating at an acceptable temperature.,Hardware
+dc1-spine2,VerifyEnvironmentCooling,skipped,VerifyEnvironmentCooling test is not supported on cEOSLab,Verifies the status of power supply fans and all fan trays.,Hardware
+dc1-spine2,VerifyEnvironmentPower,skipped,VerifyEnvironmentPower test is not supported on cEOSLab,Verifies the power supplies state and input voltage.,Hardware
+dc1-spine2,VerifyEnvironmentSystemCooling,skipped,VerifyEnvironmentSystemCooling test is not supported on cEOSLab,Verifies the device's system cooling status.,Hardware
+dc1-spine2,VerifyInventory,skipped,VerifyInventory test is not supported on cEOSLab,Verifies the physical hardware inventory of the device.,Hardware
+dc1-spine2,VerifyTemperature,skipped,VerifyTemperature test is not supported on cEOSLab,Verifies if the device temperature is within acceptable limits.,Hardware
+dc1-spine2,VerifyTransceiversManufacturers,skipped,VerifyTransceiversManufacturers test is not supported on cEOSLab,Verifies if all the transceivers come from approved manufacturers.,Hardware
+dc1-spine2,VerifyTransceiversTemperature,skipped,VerifyTransceiversTemperature test is not supported on cEOSLab,Verifies if all the transceivers are operating at an acceptable temperature.,Hardware
+dc1-leaf1,VerifyRunningConfigDiffs,success,,Verifies there is no difference between the running-config and the startup-config.,Configuration
+dc1-leaf1,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-leaf1,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-leaf1,VerifyIllegalLACP,success,,Verifies there are no illegal LACP packets in port channels.,Interfaces
+dc1-leaf1,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
+dc1-leaf1,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
+dc1-leaf1,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
+dc1-leaf1,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-leaf1,VerifyPortChannels,success,,Verifies there are no inactive ports in port channels.,Interfaces
+dc1-leaf1,VerifyMlagConfigSanity,success,,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
+dc1-leaf1,VerifyMlagStatus,success,,Verifies the health status of the MLAG configuration.,MLAG
+dc1-leaf1,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
+dc1-leaf1,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
+dc1-leaf1,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
+dc1-leaf1,VerifyCoredump,success,,Verifies there are no core dump files.,System
+dc1-leaf1,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
+dc1-leaf1,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
+dc1-leaf1,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-leaf1,VerifyNTP,success,,Verifies if NTP is synchronised.,System
+dc1-leaf1,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-leaf2,VerifyRunningConfigDiffs,success,,Verifies there is no difference between the running-config and the startup-config.,Configuration
+dc1-leaf2,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-leaf2,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-leaf2,VerifyIllegalLACP,success,,Verifies there are no illegal LACP packets in port channels.,Interfaces
+dc1-leaf2,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
+dc1-leaf2,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
+dc1-leaf2,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
+dc1-leaf2,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-leaf2,VerifyPortChannels,success,,Verifies there are no inactive ports in port channels.,Interfaces
+dc1-leaf2,VerifyMlagConfigSanity,success,,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
+dc1-leaf2,VerifyMlagStatus,success,,Verifies the health status of the MLAG configuration.,MLAG
+dc1-leaf2,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
+dc1-leaf2,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
+dc1-leaf2,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
+dc1-leaf2,VerifyCoredump,success,,Verifies there are no core dump files.,System
+dc1-leaf2,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
+dc1-leaf2,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
+dc1-leaf2,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-leaf2,VerifyNTP,success,,Verifies if NTP is synchronised.,System
+dc1-leaf2,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-leaf3,VerifyRunningConfigDiffs,success,,Verifies there is no difference between the running-config and the startup-config.,Configuration
+dc1-leaf3,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-leaf3,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-leaf3,VerifyIllegalLACP,success,,Verifies there are no illegal LACP packets in port channels.,Interfaces
+dc1-leaf3,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
+dc1-leaf3,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
+dc1-leaf3,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
+dc1-leaf3,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-leaf3,VerifyPortChannels,success,,Verifies there are no inactive ports in port channels.,Interfaces
+dc1-leaf3,VerifyMlagConfigSanity,success,,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
+dc1-leaf3,VerifyMlagStatus,success,,Verifies the health status of the MLAG configuration.,MLAG
+dc1-leaf3,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
+dc1-leaf3,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
+dc1-leaf3,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
+dc1-leaf3,VerifyCoredump,success,,Verifies there are no core dump files.,System
+dc1-leaf3,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
+dc1-leaf3,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
+dc1-leaf3,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-leaf3,VerifyNTP,success,,Verifies if NTP is synchronised.,System
+dc1-leaf3,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-leaf4,VerifyRunningConfigDiffs,success,,Verifies there is no difference between the running-config and the startup-config.,Configuration
+dc1-leaf4,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-leaf4,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-leaf4,VerifyIllegalLACP,success,,Verifies there are no illegal LACP packets in port channels.,Interfaces
+dc1-leaf4,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
+dc1-leaf4,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
+dc1-leaf4,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
+dc1-leaf4,VerifyInterfacesStatus,success,,Verifies the operational states of specified interfaces to ensure they match expected configurations.,Interfaces
+dc1-leaf4,VerifyPortChannels,success,,Verifies there are no inactive ports in port channels.,Interfaces
+dc1-leaf4,VerifyMlagConfigSanity,success,,Verifies there are no MLAG config-sanity inconsistencies.,MLAG
+dc1-leaf4,VerifyMlagStatus,success,,Verifies the health status of the MLAG configuration.,MLAG
+dc1-leaf4,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
+dc1-leaf4,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
+dc1-leaf4,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
+dc1-leaf4,VerifyCoredump,success,,Verifies there are no core dump files.,System
+dc1-leaf4,VerifyFileSystemUtilization,success,,Verifies that no partition is utilizing more than 75% of its disk space.,System
+dc1-leaf4,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
+dc1-leaf4,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-leaf4,VerifyNTP,success,,Verifies if NTP is synchronised.,System
+dc1-leaf4,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-spine1,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-spine1,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-spine1,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
+dc1-spine1,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
+dc1-spine1,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
+dc1-spine1,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
+dc1-spine1,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
+dc1-spine1,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
+dc1-spine1,VerifyCoredump,success,,Verifies there are no core dump files.,System
+dc1-spine1,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
+dc1-spine1,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-spine1,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
+dc1-spine2,VerifyZeroTouch,success,,Verifies ZeroTouch is disabled.,Configuration
+dc1-spine2,VerifyLLDPNeighbors,success,,Verifies the connection status of the specified LLDP (Link Layer Discovery Protocol) neighbors.,Connectivity
+dc1-spine2,VerifyInterfaceErrDisabled,success,,Verifies there are no interfaces in the errdisabled state.,Interfaces
+dc1-spine2,VerifyInterfaceErrors,success,,Verifies that the interfaces error counters are equal to zero.,Interfaces
+dc1-spine2,VerifyInterfaceUtilization,success,,Verifies that the utilization of interfaces is below a certain threshold.,Interfaces
+dc1-spine2,VerifyRoutingProtocolModel,success,,Verifies the configured routing protocol model.,Routing
+dc1-spine2,VerifySTPCounters,success,,Verifies there is no errors in STP BPDU packets.,STP
+dc1-spine2,VerifyAgentLogs,success,,Verifies there are no agent crash reports.,System
+dc1-spine2,VerifyCoredump,success,,Verifies there are no core dump files.,System
+dc1-spine2,VerifyMaintenance,success,,Verifies that the device is not currently under or entering maintenance.,System
+dc1-spine2,VerifyMemoryUtilization,success,,Verifies whether the memory utilization is below 75%.,System
+dc1-spine2,VerifyReloadCause,success,,Verifies the last reload cause of the device.,System
