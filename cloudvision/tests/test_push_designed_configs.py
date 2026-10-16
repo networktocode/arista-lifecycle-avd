@@ -37,7 +37,8 @@ def _change_control(serials, time="2026-10-16T19:30:41.913479123Z", status=COMPL
 
 class FakeCloudVision:
     """Records every write. With `warm_up` the change control appears after one poll and finishes after
-    another, as on a real CloudVision; without it, it is finished from the first read."""
+    another, as on a real CloudVision; without it, it is finished from the first read.
+    """
 
     def __init__(self, change_controls=(), final=None, warm_up=True):
         self._change_controls = list(change_controls)
@@ -101,12 +102,17 @@ class ChangeControlConfigTest(unittest.TestCase):
         )
         stages = body["change"]["stages"]["values"]
         self.assertEqual(body["key"], {"id": "avd-push-1"})
-        self.assertEqual(stages[body["change"]["rootStageId"]]["rows"]["values"], [{"values": ["push dc1-spine1", "push dc1-spine2"]}])
+        self.assertEqual(
+            stages[body["change"]["rootStageId"]]["rows"]["values"],
+            [{"values": ["push dc1-spine1", "push dc1-spine2"]}],
+        )
         self.assertEqual(
             stages["push dc1-spine1"]["action"],
             {
                 "name": "setConfig",
-                "args": {"values": {"DeviceID": "SPINE1", "Source": "DesignedConfig", "Timestamp": "1792185600123456789"}},
+                "args": {
+                    "values": {"DeviceID": "SPINE1", "Source": "DesignedConfig", "Timestamp": "1792185600123456789"}
+                },
             },
         )
 
@@ -115,7 +121,12 @@ class PushTest(unittest.TestCase):
     def _push(self, cloudvision):
         ticks = count(0, push_designed_configs.POLL_SECONDS)
         return push_designed_configs.push(
-            cloudvision, "v1.1.0", {"dc1-spine1": "SPINE1"}, sleep=lambda _s: None, clock=lambda: next(ticks), now_ns=lambda: 7
+            cloudvision,
+            "v1.1.0",
+            {"dc1-spine1": "SPINE1"},
+            sleep=lambda _s: None,
+            clock=lambda: next(ticks),
+            now_ns=lambda: 7,
         )
 
     def test_creates_approves_the_version_it_was_shown_starts_and_waits(self):
@@ -124,7 +135,11 @@ class PushTest(unittest.TestCase):
         paths = [path for path, _ in cloudvision.writes]
         self.assertEqual(
             paths,
-            [push_designed_configs.CHANGE_CONTROL_CONFIG_PATH, push_designed_configs.APPROVE_CONFIG_PATH, push_designed_configs.CHANGE_CONTROL_CONFIG_PATH],
+            [
+                push_designed_configs.CHANGE_CONTROL_CONFIG_PATH,
+                push_designed_configs.APPROVE_CONFIG_PATH,
+                push_designed_configs.CHANGE_CONTROL_CONFIG_PATH,
+            ],
         )
         created, approval, start = (body for _, body in cloudvision.writes)
         self.assertEqual(created["key"]["id"], change_control_id)
@@ -153,7 +168,10 @@ class MainTest(unittest.TestCase):
 
     def _main(self, cloudvision):
         env = {"CVAAS_SERVER": "www.cv-prod.example", "CVAAS_TOKEN": "t0ken"}
-        with mock.patch.dict(os.environ, env), mock.patch.object(push_designed_configs, "CloudVision", return_value=cloudvision):
+        with (
+            mock.patch.dict(os.environ, env),
+            mock.patch.object(push_designed_configs, "CloudVision", return_value=cloudvision),
+        ):
             return push_designed_configs.main(self.args)
 
     def test_pushes_only_the_switches_the_deploy_left_out(self):
@@ -182,8 +200,9 @@ class MainTest(unittest.TestCase):
 
     def test_a_switch_without_a_serial_stops_before_calling_cloudvision(self):
         (self.root / "dc1-leaf2.yml").write_text("hostname: dc1-leaf2\n")
-        with mock.patch.dict(os.environ, {"CVAAS_SERVER": "s", "CVAAS_TOKEN": "t"}), mock.patch.object(
-            push_designed_configs, "CloudVision", side_effect=AssertionError("called CloudVision")
+        with (
+            mock.patch.dict(os.environ, {"CVAAS_SERVER": "s", "CVAAS_TOKEN": "t"}),
+            mock.patch.object(push_designed_configs, "CloudVision", side_effect=AssertionError("called CloudVision")),
         ):
             self.assertEqual(push_designed_configs.main(self.args), 2)
 

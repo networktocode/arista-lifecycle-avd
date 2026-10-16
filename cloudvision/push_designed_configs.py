@@ -182,7 +182,8 @@ def push(cloudvision, release, serials, sleep=time.sleep, clock=time.monotonic, 
         },
     )
     cloudvision.set(
-        CHANGE_CONTROL_CONFIG_PATH, {"key": {"id": change_control_id}, "start": {"value": True, "notes": "Started by AVD"}}
+        CHANGE_CONTROL_CONFIG_PATH,
+        {"key": {"id": change_control_id}, "start": {"value": True, "notes": "Started by AVD"}},
     )
     while True:
         state = cloudvision.change_control(change_control_id)
@@ -221,7 +222,9 @@ def main(argv=None):
         if not left_out:
             print("The deploy's change control pushed every switch; nothing else to push.")
             return 0
-        print(f"The deploy's change control left out {', '.join(sorted(left_out))}; pushing their intended configuration.")
+        print(
+            f"The deploy's change control left out {', '.join(sorted(left_out))}; pushing their intended configuration."
+        )
         change_control_id = push(cloudvision, args.release, left_out)
     except PushError as exc:
         print(str(exc), file=sys.stderr)
