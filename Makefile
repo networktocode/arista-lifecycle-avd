@@ -1,4 +1,4 @@
-.PHONY: help build dc1-build dc1-deploy dc1-deploy_digital_twin_clab dc1-validate dc1-validate_digital_twin_clab dc1-deploy-twin dc1-validate-twin deploy_clab_topology
+.PHONY: help build dc1-build dc1-build-twin dc1-deploy dc1-deploy_digital_twin_clab dc1-validate dc1-validate_digital_twin_clab dc1-deploy-twin dc1-validate-twin deploy_clab_topology
 
 INVENTORY := sites/DC1/inventory.yml
 TWIN_INVENTORY := twin_inventory.yml
@@ -9,6 +9,9 @@ help: ## Show the targets
 
 dc1-build: ## Build DC1 intended configs, documentation, twin artifacts, and the amplification report
 	ansible-playbook playbooks/build.yml -i $(INVENTORY) $(TARGET)
+
+dc1-build-twin: ## Build only the DC1 digital twin's configs and structured configs (what the twin workflow deploys and validates)
+	ansible-playbook playbooks/build_digital_twin_clab.yml -i $(INVENTORY) $(TARGET)
 
 build: ## Build one site's configs: make build SITE=BR1
 	ansible-playbook playbooks/build.yml -i sites/$(SITE)/inventory.yml -e 'target=$(SITE)'
