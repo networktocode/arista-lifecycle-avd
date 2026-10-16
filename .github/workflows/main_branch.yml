@@ -49,6 +49,17 @@ jobs:
           CVAAS_SERVER: ${{ secrets.CVAAS_SERVER }}
           CVAAS_TOKEN: ${{ secrets.CVAAS_TOKEN }}
 
+      # CloudVision's change control only pushes switches whose intended configuration changed, so
+      # after a lab rebuild an unchanged switch would stay on its boot configuration. This pushes
+      # the intended configuration to every switch the deploy's change control left out.
+      - name: Push the intended configuration to the switches the deploy left out
+        run: python3 cloudvision/push_designed_configs.py --release "$TAG" --since "$RELEASED_AT" --structured-configs sites/DC1/intended/structured_configs
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          RELEASED_AT: ${{ github.event.release.published_at }}
+          CVAAS_SERVER: ${{ secrets.CVAAS_SERVER }}
+          CVAAS_TOKEN: ${{ secrets.CVAAS_TOKEN }}
+
   Network-validation:
     if: ${{ needs.deploy-prod.outputs.output_dc1 == 'success' }}
     needs: deploy-prod
