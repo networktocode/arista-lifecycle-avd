@@ -10,7 +10,7 @@
 #
 # Forks are deliberately not supported: a pull_request run from a fork gets no
 # secrets and a read-only token, so it could neither reach the twin nor commit
-# the report. The job skips unless the head branch lives in this repository,
+# the report. Every job skips unless the head branch lives in this repository,
 # and pull_request_target is never used.
 name: Deploy & test configurations in the digital twin
 
@@ -27,15 +27,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  digital-twin:
+  deploy-twin:
     if: github.event.pull_request.head.repo.full_name == github.repository
     env:
       ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
-    timeout-minutes: 20
+    timeout-minutes: 15
     runs-on: [self-hosted, "lab-${{ vars.NAUTOBOT_LAB_ID }}"]
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+      pull-requests: read
+    outputs:
+      output_dc1: ${{ steps.dc1-deploy.outcome }}
     container:
       image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
       options: '--user=root --add-host=host.docker.internal:host-gateway'
@@ -61,9 +63,9 @@ jobs:
               - 'sites/DC1/group_vars/**'
               - 'sites/_global_vars/**'
 
-      # One job and one build: deploy and validation share this container, and
-      # the twin never uses the production variant, which the Build feature
-      # branch workflow renders and commits, so only the twin's is built here.
+      # The twin never uses the production variant, which the Build feature branch
+      # workflow renders and commits, so only the twin's is built, and only here:
+      # Network-validation takes this build as an artifact instead of rebuilding.
       - name: Build the DC1 digital twin's configuration
         run: make dc1-build-twin
         id: build-twin
@@ -80,8 +82,49 @@ jobs:
         env:
           CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
 
-      - name: Find the running DC1 digital twin
+      - name: Hand the twin build to Network-validation
         if: steps.dc1-deploy.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dc1-twin-build
+          path: sites/DC1/digital_twins/
+          if-no-files-found: error
+          retention-days: 1
+
+  Network-validation:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && needs.deploy-twin.outputs.output_dc1 == 'success' }}
+    needs: deploy-twin
+    env:
+      ANSIBLE_COLLECTIONS_PATH: /home/avd/.ansible/collections/ansible_collections
+    timeout-minutes: 15
+    runs-on: [self-hosted, "lab-${{ vars.NAUTOBOT_LAB_ID }}"]
+    permissions:
+      contents: write
+    outputs:
+      anta_outcome: ${{ steps.dc1-validation.outcome }}
+    container:
+      image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
+      options: '--user=root --add-host=host.docker.internal:host-gateway'
+      env:
+        PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: add the repo to git safe directory
+        run: 'git config --global --add safe.directory "$GITHUB_WORKSPACE"'
+
+      # This job runs in its own container with its own clean checkout. The twin
+      # build arrives from deploy-twin as an artifact, so it is not rebuilt.
+      - name: Take the twin build from deploy-twin
+        uses: actions/download-artifact@v8
+        with:
+          name: dc1-twin-build
+          path: sites/DC1/digital_twins
+
+      - name: Find the running DC1 digital twin
         run: |
           python3 digital_twin/clab/twin_inventory.py \
             --api http://host.docker.internal:8080 \
@@ -93,7 +136,6 @@ jobs:
           CLAB_JWT_SECRET: ${{ secrets.CLAB_JWT_SECRET }}
 
       - name: Pin ANTA 1.9.0
-        if: steps.dc1-deploy.outcome == 'success'
         # The image ships anta 1.8.0 under /home/avd/.local, which the job's PYTHONPATH
         # puts ahead of system site-packages. pip's --target does not replace an existing
         # package's files, so the old version is uninstalled first and 1.9.0 installed
@@ -104,13 +146,11 @@ jobs:
           python3 -c 'import anta; assert anta.__version__ == "v1.9.0", anta.__version__; print("anta", anta.__version__)'
 
       - name: run DC1 validation
-        if: steps.dc1-deploy.outcome == 'success'
         run: make dc1-validate-twin
         id: dc1-validation
         continue-on-error: true
 
       - name: commit the test catalogs and report to the repository
-        if: steps.dc1-deploy.outcome == 'success'
         run: |
           if [[ -n $(git status --porcelain) ]]; then
             git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -127,8 +167,33 @@ jobs:
           BRANCH: ${{ github.head_ref }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
 
+      - name: Fail the check if DC1 validation failed
+        if: always() && steps.dc1-validation.outcome == 'failure'
+        run: exit 1
+
+  PR-comment:
+    # The twin's counterpart to the production workflow's Release-notes job: it posts the
+    # report Network-validation committed to the pull request branch, whether validation
+    # passed or failed.
+    if: ${{ always() && github.event.pull_request.head.repo.full_name == github.repository && (needs.Network-validation.outputs.anta_outcome == 'success' || needs.Network-validation.outputs.anta_outcome == 'failure') }}
+    needs: [deploy-twin, Network-validation]
+    timeout-minutes: 15
+    runs-on: [self-hosted, "lab-${{ vars.NAUTOBOT_LAB_ID }}"]
+    permissions:
+      contents: read
+      pull-requests: write
+    container:
+      image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
+      options: '--user=root --add-host=host.docker.internal:host-gateway'
+      env:
+        PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+
       - name: Prepare DC1 ANTA report
-        if: always() && (steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure')
         run: |
           echo "# DC1 - Digital Twin Network Validation Report" > /tmp/dc1-comment.md
           echo "" >> /tmp/dc1-comment.md
@@ -139,12 +204,7 @@ jobs:
           fi
 
       - name: Post DC1 ANTA report as PR comment
-        if: always() && (steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure')
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: dc1-anta-report
           path: /tmp/dc1-comment.md
-
-      - name: Fail the check if DC1 validation failed
-        if: always() && steps.dc1-validation.outcome == 'failure'
-        run: exit 1
