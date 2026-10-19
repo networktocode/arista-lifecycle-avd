@@ -2,27 +2,31 @@
 bgp_session_state:
   display_name: "BGP Session State"
   rule_type: "exact_match"
-  description: "Every BGP neighbor stays established with a stable prefix count."
+  description: "The BGP sessions that are not established are the same before and after the change."
   collectors:
-    # JSON keyed by VRF and neighbour instead of the TextFSM row list: jdiff only pairs anchored list items by name when
-    # both lists have the same length, so a neighbour added or removed by the change produced a positional diff.
-    # The excludes keep exactly what the original compared: peer state and received prefixes.
+    # Only the unhealthy sessions, named by their AVD description. A change that adds sessions (a new tenant VRF's MLAG
+    # peering) leaves the list as it was, while a session that drops adds its name. Comparing the whole table failed every
+    # intended addition, and the Nautobot intent checks now verify the designed session counts. The route table size is
+    # still compared by Route Count. `exclude` is written empty because the datasource only updates the keys present here.
     - name: "json"
       platform: "arista_eos"
       command: "show ip bgp summary vrf all | json"
-      jmespath: ""   # raw mode: required (empty) when `exclude` is used; the datasource only writes keys present here
-      exclude: ["msgReceived", "msgSent", "inMsgQueue", "outMsgQueue", "upDownTime", "version", "asn", "description", "underMaintenance", "prefixAccepted", "routerId", "vrf"]
+      jmespath: "[{bgp: {not_established: sort(values(vrfs)[*].values(peers)[] | [?peerState != 'Established'].description)}}]"
+      exclude: []
 interface_health:
   display_name: "Interface Health"
   rule_type: "exact_match"
-  description: "Interface admin and operational state are unchanged."
+  description: "The enabled interfaces that are not up are the same before and after the change."
   collectors:
-    - name: "napalm"
+    # Only the unhealthy interfaces, by name, for the same reason as BGP Session State: a tenant's new SVIs leave the list
+    # as it was, an interface going down adds its name. NAPALM's get_interfaces has no name field to filter on, hence the
+    # JSON command. `napalm_getter` and `exclude` are written empty because the datasource only updates the keys present.
+    - name: "json"
       platform: "arista_eos"
-      napalm_getter: "get_interfaces"
-      # dict keyed by interface (with the noisy fields excluded) rather than an anchored list: see the BGP rule above.
-      jmespath: ""   # raw mode: required (empty) when `exclude` is used
-      exclude: ["mtu", "speed", "last_flapped", "description", "mac_address"]
+      command: "show interfaces | json"
+      napalm_getter: ""
+      jmespath: "[{interfaces: {not_up: sort(values(interfaces)[?interfaceStatus != 'disabled' && lineProtocolStatus != 'up'].name)}}]"
+      exclude: []
 mlag_state:
   display_name: "MLAG State"
   rule_type: "exact_match"

@@ -9,24 +9,24 @@ Loaded into Nautobot by the Operational Compliance app's Git datasources:
 | DC1 Change Window | `dc1_change_window.yml` | Pre/post comparison (exact_match / tolerance) around a production change. |
 | AVD Validation | `avd_validation.yml` | One-sided checks (parameter_match / operator / regex) mirroring the ANTA tests AVD generates for DC1 (pyavd 6.3.0 `AVD_TEST_INDEX`). Run on a single snapshot. |
 
-## Changes to `dc1_change_window.yml` on this branch
+## How the change-window rules compare
 
-`Interface Health` used `jmespath: "*.{is_up: is_up, is_enabled: is_enabled}"`. The app stores NAPALM output
-wrapped under the getter name (`{"get_interfaces": {...}}`), so `*` selected the whole interface table and the
-projection produced nulls: the rule passed vacuously (verified: a shut Port-Channel did not flip it). The path
-is now `get_interfaces.$*$.[is_up, is_enabled]`, anchored per interface so the diff names the interface.
+`Interface Health` and `BGP Session State` compare only what is unhealthy, by name: the enabled interfaces that are not
+up (`show interfaces | json`), and the BGP sessions that are not established, named by their AVD description
+(`show ip bgp summary vrf all | json`). A change that adds interfaces or sessions, such as a new tenant's SVIs and MLAG
+peering, leaves both lists as they were and passes. An interface or session that drops adds its name, and the diff reads
+`new: Ethernet49/1` or `new: dc1-spine1_Ethernet1/1`. Comparing the whole interface and neighbor tables failed every
+intended addition. A session without a description would not be named, but AVD describes every neighbor.
 
-`Route Count` used `jmespath: "totalRoutes"`. On EOS 4.30 `show ip route summary | json` nests the counter
-under `vrfs.default.totalRoutes`, and jdiff's tolerance check needs an anchored list, so the path is now
-`[{routes: {total: vrfs.default.totalRoutes}}]`. Without this the rule extracted nothing and passed vacuously.
+Whether the change added what the design intended is checked by Nautobot instead: `03 Promote to Production` writes
+**intent checks** (`DC1 Intent: ...` rules in the `DC1 Leaf Intent` and `DC1 Spine Intent` groups) whose expected values
+come from the model: VRFs and VNIs, anycast gateways, BGP and EVPN sessions, EVPN subnets. Leafs and spines each get a
+compliance setting (`DC1 Leafs`, `DC1 Spines`) that runs their intent group plus the change-window group. Those rules are
+generated in Nautobot, not stored in this repository.
 
-`Interface Health` and `BGP Session State` now compare **dictionaries keyed by interface / VRF+neighbour** (NAPALM
-`get_interfaces` with `mtu, speed, last_flapped, description, mac_address` excluded; `show ip bgp summary vrf all | json`
-with the counters excluded) instead of anchored lists. jdiff pairs anchored list items by name only when both lists have
-the same length; when an interface or neighbour appears or disappears between the snapshots it falls back to positional
-pairing and the diff compares unrelated interfaces (`index_element[0]: Ethernet49/1 -> Ethernet1`). With dictionaries the
-diff reads `Ethernet49/1.is_up true -> false`, `Loopback77: new`, `Vlan1188: missing`. What is compared is unchanged:
-admin/oper state per interface, and peer state + received prefixes per neighbour.
+`Route Count` compares `vrfs.default.totalRoutes` with a 10 % tolerance. On EOS 4.30 `show ip route summary | json` nests
+the counter under `vrfs.default`, and jdiff's tolerance check needs an anchored list, hence
+`[{routes: {total: vrfs.default.totalRoutes}}]`.
 
 ## ANTA tests not mirrored
 
@@ -55,8 +55,9 @@ SpecificIPSecConn, Reachability (not generated for this design).
 jdiff/JMESPath pitfalls: positional list comparison (two-sided rules), fallbacks (`||`) that let a rule pass when the
 command output loses the key it reads, empty extractions that pass, numeric strings. Outcome:
 
-- All pre/post rules compare **dictionaries keyed by name** (interface, VRF/neighbour, MLAG field), never anchored lists,
-  because jdiff pairs list items by position when the lists differ in length.
+- Pre/post rules never compare anchored lists, because jdiff pairs list items by position when the lists differ in
+  length: they compare named fields (MLAG), a single anchored count (Route Count), or sorted lists of names (Interface
+  Health, BGP Session State).
 - One-sided rules are **anchored per object** (`dict.$*$.[field]`) or built as a single named item, and no longer use `||`
   fallbacks on the key they read: a changed or missing key raises during evaluation (an UNKNOWN result) instead of passing.
 - Known accepted residual: `MLAG Status Active` accepts `null` for the negotiation/peer-link/local-interface fields because

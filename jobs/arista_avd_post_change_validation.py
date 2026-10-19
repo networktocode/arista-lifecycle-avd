@@ -1,8 +1,9 @@
 """Post-change validation for a promoted release: the chain to run after a real change on the AVD fabric.
 
 Before the change: take an Operational Compliance snapshot (e.g. "CHG-1234 pre") of the AVD devices.
-After the change: run this chain. It takes the post snapshot with exactly the pre snapshot's devices and rules,
-compares the two with the Operational Compliance app, and publishes the "Change Validation Report" so the report is bound
+After the change: run this chain. It takes the post snapshot of the pre snapshot's devices with the same rules (the
+rules every device ran, plus each device's own from its compliance setting), compares the two with the Operational
+Compliance app, and publishes the "Change Validation Report" so the report is bound
 to this change. Requires: nautobot-operational-compliance, nautobot-reports, nautobot-tools (ChainingJob), and the
 report template installed by the "Load Change Validation Report" job.
 
@@ -40,7 +41,7 @@ class PostChangeValidation(ChainingJob):
     """After a real change: take the post snapshot, compare it with the pre snapshot, publish the change report."""
 
     pre_snapshot = ObjectVar(model=Snapshot, required=False,
-                             description="The snapshot taken BEFORE the change. The post snapshot uses exactly its devices and rules. Leave empty to use the most recent snapshot covering the AVD devices.")
+                             description="The snapshot taken BEFORE the change. The post snapshot covers its devices with the same rules. Leave empty to use the most recent snapshot covering the AVD devices.")
     snapshot_name = StringVar(default="", required=False, description="Name for the post-change snapshot. Default: the pre snapshot's name followed by ' post'.")
     publish = BooleanVar(default=True, description="Publish the 'Change Validation Report' for this change.")
 
@@ -68,12 +69,20 @@ class PostChangeValidation(ChainingJob):
         return jr
 
     def _take_snapshot_like(self, step_name, snapshot, snapshot_name):
-        """Take a snapshot with exactly the devices and validation rules of `snapshot`."""
-        outputs = snapshot.command_outputs.all()
+        """Take a snapshot of `snapshot`'s devices with the rules each of them ran.
+
+        Take Snapshot applies the rules it is given to every device, so only the rules every device ran are passed;
+        each device's compliance setting adds its own. Rules a setting assigns to one role (leaf or spine intent checks)
+        therefore stay on that role instead of running on every device.
+        """
+        rules_by_device = {}
+        for device_id, rule_id in snapshot.command_outputs.values_list("device_id", "validation_rule_id"):
+            rules_by_device.setdefault(device_id, set()).add(rule_id)
+        shared = set.intersection(*rules_by_device.values()) if rules_by_device else set()
         kwargs = {
             "snapshot_name": snapshot_name,
-            "validation_rules": sorted({str(pk) for pk in outputs.values_list("validation_rule_id", flat=True)}),
-            "device": sorted({str(pk) for pk in outputs.values_list("device_id", flat=True)}),
+            "validation_rules": sorted(str(pk) for pk in shared),
+            "device": sorted(str(pk) for pk in rules_by_device),
             "compare_against_latest_snapshot": False,
             "fail_job_on_task_failure": False,
             "debug": False,
