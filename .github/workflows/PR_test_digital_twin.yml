@@ -100,8 +100,7 @@ jobs:
     runs-on: [self-hosted, "lab-${{ vars.NAUTOBOT_LAB_ID }}"]
     permissions:
       contents: write
-    outputs:
-      anta_outcome: ${{ steps.dc1-validation.outcome }}
+      pull-requests: write
     container:
       image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
       options: '--user=root --add-host=host.docker.internal:host-gateway'
@@ -167,33 +166,10 @@ jobs:
           BRANCH: ${{ github.head_ref }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
 
-      - name: Fail the check if DC1 validation failed
-        if: always() && steps.dc1-validation.outcome == 'failure'
-        run: exit 1
-
-  PR-comment:
-    # The twin's counterpart to the production workflow's Release-notes job: it posts the
-    # report Network-validation committed to the pull request branch, whether validation
-    # passed or failed.
-    if: ${{ always() && github.event.pull_request.head.repo.full_name == github.repository && (needs.Network-validation.outputs.anta_outcome == 'success' || needs.Network-validation.outputs.anta_outcome == 'failure') }}
-    needs: [deploy-twin, Network-validation]
-    timeout-minutes: 15
-    runs-on: [self-hosted, "lab-${{ vars.NAUTOBOT_LAB_ID }}"]
-    permissions:
-      contents: read
-      pull-requests: write
-    container:
-      image: "ghcr.io/aristanetworks/avd/universal:python3.13-avd-v6.3.0"
-      options: '--user=root --add-host=host.docker.internal:host-gateway'
-      env:
-        PYTHONPATH: "/home/avd/.local/lib/python3.13/site-packages"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref }}
-
+      # Posted from this job rather than one of its own: every job on the runner sets up
+      # afresh and downloads its actions again, which a separate job pays for on every run.
       - name: Prepare DC1 ANTA report
+        if: always() && (steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure')
         run: |
           echo "# DC1 - Digital Twin Network Validation Report" > /tmp/dc1-comment.md
           echo "" >> /tmp/dc1-comment.md
@@ -204,7 +180,12 @@ jobs:
           fi
 
       - name: Post DC1 ANTA report as PR comment
+        if: always() && (steps.dc1-validation.outcome == 'success' || steps.dc1-validation.outcome == 'failure')
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: dc1-anta-report
           path: /tmp/dc1-comment.md
+
+      - name: Fail the check if DC1 validation failed
+        if: always() && steps.dc1-validation.outcome == 'failure'
+        run: exit 1
