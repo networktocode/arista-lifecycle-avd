@@ -27,6 +27,12 @@ DEPLOYMENT_TAG_LABEL = "nautobot_deployment"
 LAB_TAG_LABEL = "nautobot_lab"
 STREAMING_ACTIVE = "STREAMING_STATUS_ACTIVE"
 TAG_ASSIGNMENTS_PATH = "api/resources/tag/v2/TagAssignment/all"
+# Only Nautobot's two device tags, filtered by CloudVision; it returns rows matching any one of them. The tenant
+# holds thousands of other assignments (AVD's interface tags among them), which this has no use for.
+NAUTOBOT_DEVICE_TAGS = [
+    {"elementType": "ELEMENT_TYPE_DEVICE", "label": DEPLOYMENT_TAG_LABEL},
+    {"elementType": "ELEMENT_TYPE_DEVICE", "label": LAB_TAG_LABEL},
+]
 DEVICES_PATH = "api/resources/inventory/v1/Device/all"
 SERIAL_LINE = re.compile(r"^serial_number:.*$", re.MULTILINE)
 TIMEOUT_SECONDS = 60
@@ -88,10 +94,19 @@ def write_serial(path, serial):
     path.write_text(text, encoding="utf-8")
 
 
-def fetch(server, token, path):
-    """GET one CloudVision `/all` resource."""
+def fetch(server, token, path, keys=None):
+    """Read one CloudVision `/all` resource: all of it, or only the rows whose key matches one of `keys`.
+
+    With `keys`, CloudVision filters (`partialEqFilter`) and only matching rows cross the wire. A key field left
+    out matches any value, so the caller still checks the fields it did not filter on.
+    """
     base = server if server.startswith("http") else f"https://{server}"
-    request = urllib.request.Request(f"{base.rstrip('/')}/{path}", headers={"Authorization": f"Bearer {token}"})
+    headers = {"Authorization": f"Bearer {token}"}
+    data = None
+    if keys:
+        headers["Content-Type"] = "application/json"
+        data = json.dumps({"partialEqFilter": [{"key": key} for key in keys]}).encode()
+    request = urllib.request.Request(f"{base.rstrip('/')}/{path}", data=data, headers=headers)
     with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:  # noqa: S310 - fixed https URL
         return parse_stream(response.read().decode())
 
@@ -117,7 +132,7 @@ def main(argv=None):
     if not paths:
         print(f"No structured configs under {args.structured_configs}.", file=sys.stderr)
         return 2
-    tagged = tagged_serials(fetch(server, token, TAG_ASSIGNMENTS_PATH), args.deployment, args.lab)
+    tagged = tagged_serials(fetch(server, token, TAG_ASSIGNMENTS_PATH, NAUTOBOT_DEVICE_TAGS), args.deployment, args.lab)
     found, problems = match(
         [path.stem for path in paths], fetch(server, token, DEVICES_PATH), tagged, args.deployment, args.lab
     )

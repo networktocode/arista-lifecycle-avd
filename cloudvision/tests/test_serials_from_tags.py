@@ -7,9 +7,11 @@ Standard library only, so this runs on a bare CI runner:
 """
 
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 _spec = importlib.util.spec_from_file_location("serials_from_tags", HERE.parent / "serials_from_tags.py")
@@ -111,6 +113,44 @@ class WriteSerialTest(unittest.TestCase):
             self.assertEqual(text.count("serial_number:"), 1)
             self.assertIn('serial_number: "S2"', text)
             self.assertIn("router_bgp:\n  as: '65000'\n", text)
+
+
+class FetchTest(unittest.TestCase):
+    def _fetch(self, keys=None):
+        response = mock.MagicMock()
+        response.__enter__.return_value.read.return_value = b'{"result": {"value": {"key": {"deviceId": "S1"}}}}\n'
+        with mock.patch.object(serials_from_tags.urllib.request, "urlopen", return_value=response) as urlopen:
+            rows = serials_from_tags.fetch("www.cv-prod.example", "t0ken", "api/resources/x/all", keys)
+        return rows, urlopen.call_args.args[0]
+
+    def test_with_keys_it_posts_cloudvisions_filter(self):
+        rows, request = self._fetch(serials_from_tags.NAUTOBOT_DEVICE_TAGS)
+        self.assertEqual(rows, [{"key": {"deviceId": "S1"}}])
+        self.assertEqual(request.get_method(), "POST")
+        self.assertEqual(request.full_url, "https://www.cv-prod.example/api/resources/x/all")
+        self.assertEqual(
+            json.loads(request.data),
+            {
+                "partialEqFilter": [
+                    {"key": {"elementType": "ELEMENT_TYPE_DEVICE", "label": DEPLOYMENT}},
+                    {"key": {"elementType": "ELEMENT_TYPE_DEVICE", "label": LAB}},
+                ]
+            },
+        )
+
+    def test_without_keys_it_reads_the_whole_resource(self):
+        _, request = self._fetch()
+        self.assertEqual(request.get_method(), "GET")
+        self.assertIsNone(request.data)
+
+    def test_the_filtered_rows_still_go_through_the_mainline_device_check(self):
+        # CloudVision's filter leaves workspace rows in; tagged_serials drops them as before.
+        filtered = [
+            *_tagged("S1"),
+            _assignment("S2", DEPLOYMENT, "DC1", workspace="ws-1"),
+            _assignment("S2", LAB, "NTC01", workspace="ws-1"),
+        ]
+        self.assertEqual(serials_from_tags.tagged_serials(filtered, "DC1", "NTC01"), {"S1"})
 
 
 class MainTest(unittest.TestCase):
