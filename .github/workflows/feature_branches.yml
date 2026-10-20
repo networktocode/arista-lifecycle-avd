@@ -3,6 +3,8 @@
 # them back, so the intended configs, documentation, and twin configs in the
 # branch always match the group_vars that produced them.
 name: Build feature branch
+# The run would otherwise take the commit's title alone, the same title the pull request's twin run shows.
+run-name: "Build: ${{ github.event.head_commit.message }}"
 
 on:
   push:
