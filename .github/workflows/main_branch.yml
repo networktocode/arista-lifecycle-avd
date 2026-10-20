@@ -42,18 +42,24 @@ jobs:
           CVAAS_SERVER: ${{ secrets.CVAAS_SERVER }}
           CVAAS_TOKEN: ${{ secrets.CVAAS_TOKEN }}
 
-      - name: Deploy configuration for the DC1 fabric
-        id: dc1-deploy
-        run: ansible-playbook playbooks/deploy.yml -i sites/DC1/inventory.yml -e 'target=DC1 cv_submit_workspace=true cv_run_change_control=true'
+      # AVD submits the workspace and leaves the change control CloudVision creates from it pending,
+      # named after the release, for the next step to complete and run. The requested state is set
+      # directly: `cv_run_change_control=false` given as key=value is the string "false", which the
+      # role reads as true.
+      - name: Submit the DC1 configuration to CloudVision
+        run: ansible-playbook playbooks/deploy.yml -i sites/DC1/inventory.yml -e 'target=DC1 cv_submit_workspace=true' -e "cv_change_control_requested_state='pending approval' cv_change_control_name='AVD ${TAG}'"
         env:
+          TAG: ${{ github.event.release.tag_name }}
           CVAAS_SERVER: ${{ secrets.CVAAS_SERVER }}
           CVAAS_TOKEN: ${{ secrets.CVAAS_TOKEN }}
 
-      # CloudVision's change control only pushes switches whose intended configuration changed, so
-      # after a lab rebuild an unchanged switch would stay on its boot configuration. This pushes
-      # the intended configuration to every switch the deploy's change control left out.
-      - name: Push the intended configuration to the switches the deploy left out
-        run: python3 cloudvision/push_designed_configs.py --release "$TAG" --since "$RELEASED_AT" --structured-configs sites/DC1/intended/structured_configs
+      # CloudVision's change control only covers switches whose intended configuration changed, so
+      # after a lab rebuild an unchanged switch would stay on its boot configuration. This adds every
+      # switch the change control left out to it, then approves and runs it: one change control
+      # configures the whole fabric at once.
+      - name: Deploy configuration for the DC1 fabric
+        id: dc1-deploy
+        run: python3 cloudvision/push_designed_configs.py --release "$TAG" --since "$RELEASED_AT" --change-control-name "AVD $TAG" --structured-configs sites/DC1/intended/structured_configs
         env:
           TAG: ${{ github.event.release.tag_name }}
           RELEASED_AT: ${{ github.event.release.published_at }}

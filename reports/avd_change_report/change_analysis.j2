@@ -150,14 +150,15 @@ There is no before/after comparison in the reporting period, so there is nothing
 {% set two_rules = (two | map(attribute='post.validation_rule.name') | unique | sort | list) %}
 {% set one_rules = (after | map(attribute='post.validation_rule.name') | unique | sort | list) %}
 {% set before_rules = (before | map(attribute='post.validation_rule.name') | unique | sort | list) %}
-{#- one cell per device x rule, with a normalised outcome key -#}
+{#- one cell per device x rule, with a normalised outcome key; an absolute rule gets a cell only on the devices it ran on
+    (the leaf and spine intent checks each run on one role) -#}
 {% for d in devs %}
 {% for r in two_rules %}{% set x = ns.two.get(d ~ '|' ~ r) %}
 {% set o = 'unknown' if (not x or x.match == 'UNKNOWN') else ((('added' if (only_added(x) | trim) else 'changed')) if x.match == 'FAIL' else 'ok') %}
 {% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r, 'Other'), 'type': 'before vs. after', 'before': 'n/a', 'after': 'n/a', 'outcome': o, 'x': x}) %}{% endfor %}
-{% for r in one_rules %}{% set xb = ns.b.get(d ~ '|' ~ r) %}{% set xa = ns.a.get(d ~ '|' ~ r) %}{% set mb = xb.match if xb else None %}{% set ma = xa.match if xa else None %}
+{% for r in one_rules if (d ~ '|' ~ r) in ns.b or (d ~ '|' ~ r) in ns.a %}{% set xb = ns.b.get(d ~ '|' ~ r) %}{% set xa = ns.a.get(d ~ '|' ~ r) %}{% set mb = xb.match if xb else None %}{% set ma = xa.match if xa else None %}
 {% set o = 'unknown' if (ma == 'UNKNOWN' or mb == 'UNKNOWN' or not xa or not xb) else ('ok' if (mb == 'PASS' and ma == 'PASS') else ('regressed' if (mb == 'PASS' and ma == 'FAIL') else ('fixed' if (mb == 'FAIL' and ma == 'PASS') else 'preexisting'))) %}
-{% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r, 'System'), 'type': 'absolute', 'before': (mb or 'not run'), 'after': (ma or 'not run'), 'outcome': o, 'x': xa or xb}) %}{% endfor %}
+{% set _ = ns.cells.append({'device': d, 'rule': r, 'area': area.get(r) or ('Intent' if ' Intent: ' in r else 'System'), 'type': 'absolute', 'before': (mb or 'not run'), 'after': (ma or 'not run'), 'outcome': o, 'x': xa or xb}) %}{% endfor %}
 {% endfor %}
 {% set icon = {'ok': '✅', 'added': '➕', 'changed': '⚠️', 'regressed': '⚠️', 'fixed': '🔧', 'preexisting': '❌', 'unknown': '❔'} %}
 {% set label = {'ok': 'OK', 'added': 'Added', 'changed': 'Changed', 'regressed': 'Regressed', 'fixed': 'Fixed', 'preexisting': 'Pre-existing', 'unknown': 'Inconclusive'} %}
