@@ -21,7 +21,7 @@ push_designed_configs = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(push_designed_configs)
 
 COMPLETED = push_designed_configs.COMPLETED
-PENDING = "CHANGE_CONTROL_STATUS_UNSPECIFIED"
+PENDING = "CHANGE_CONTROL_STATUS_NOT_STARTED"
 SINCE = datetime(2026, 10, 16, 19, 30, 25, tzinfo=timezone.utc)
 SHOWN = "2026-10-16T19:31:00.100000000Z"
 AMENDED = "2026-10-16T19:31:05.200000000Z"
@@ -120,6 +120,17 @@ class PendingChangeControlTest(unittest.TestCase):
             _workspace_change_control({"dc1-leaf1": "LEAF1"}, time="2026-10-16T19:18:28Z", cc_id="before release"),
         ]
         self.assertIs(push_designed_configs.pending_change_control(change_controls, "AVD v1.1.0", SINCE), newest)
+
+    def test_a_change_control_waiting_in_either_not_started_status_is_found(self):
+        for status in ("CHANGE_CONTROL_STATUS_NOT_STARTED", "CHANGE_CONTROL_STATUS_UNSPECIFIED", None):
+            with self.subTest(status=status):
+                change_control = _workspace_change_control({"dc1-leaf1": "LEAF1"})
+                if status is None:
+                    del change_control["status"]
+                else:
+                    change_control["status"] = status
+                found = push_designed_configs.pending_change_control([change_control], "AVD v1.1.0", SINCE)
+                self.assertIs(found, change_control)
 
     def test_none_when_cloudvision_created_none(self):
         self.assertIsNone(push_designed_configs.pending_change_control([], "AVD v1.1.0", SINCE))

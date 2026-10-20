@@ -44,7 +44,8 @@ CHANGE_CONTROL_PATH = "api/resources/changecontrol/v1/ChangeControl"
 CHANGE_CONTROL_CONFIG_PATH = "api/resources/changecontrol/v1/ChangeControlConfig"
 APPROVE_CONFIG_PATH = "api/resources/changecontrol/v1/ApproveConfig"
 COMPLETED = "CHANGE_CONTROL_STATUS_COMPLETED"
-NOT_STARTED = ("", "CHANGE_CONTROL_STATUS_UNSPECIFIED")
+# A submitted workspace's change control waits as NOT_STARTED; older CloudVision releases report it unspecified.
+NOT_STARTED = ("", "CHANGE_CONTROL_STATUS_UNSPECIFIED", "CHANGE_CONTROL_STATUS_NOT_STARTED")
 SET_CONFIG = "setConfig"
 DESIGNED_CONFIG = "DesignedConfig"
 # What a stage of a change control's configuration holds; the state CloudVision reports adds status and times.
