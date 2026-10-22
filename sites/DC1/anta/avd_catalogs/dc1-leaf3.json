@@ -292,11 +292,19 @@
             "status": "up"
           },
           {
+            "name": "Vlan300",
+            "status": "up"
+          },
+          {
             "name": "Vlan3500",
             "status": "up"
           },
           {
             "name": "Vlan3501",
+            "status": "up"
+          },
+          {
+            "name": "Vlan3502",
             "status": "up"
           },
           {
@@ -395,6 +403,10 @@
           {
             "peer_address": "10.101.254.1",
             "vrf": "GREEN"
+          },
+          {
+            "peer_address": "10.101.254.1",
+            "vrf": "RED"
           }
         ]
       }
